@@ -1,4 +1,11 @@
-# Compiled class file
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Maven
+target/
+
+# Compiled class files
 *.class
 
 # Log file
@@ -19,6 +26,6 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# JVM crash logs
 hs_err_pid*
 replay_pid*
