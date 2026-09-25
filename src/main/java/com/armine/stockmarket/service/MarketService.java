@@ -50,4 +50,36 @@ public class MarketService {
         }
         stock.updatePrice(newPrice);
     }
+    public void initializeMarket() {
+
+        addStock(new Stock(
+                "AAPL",
+                "Apple",
+                220.50
+        ));
+
+        addStock(new Stock(
+                "MSFT",
+                "Microsoft",
+                510.00
+        ));
+
+        addStock(new Stock(
+                "GOOG",
+                "Google",
+                250.00
+        ));
+
+        addStock(new Stock(
+                "AMZN",
+                "Amazon",
+                230.00
+        ));
+
+        addStock(new Stock(
+                "TSLA",
+                "Tesla",
+                350.00
+        ));
+    }
 }
