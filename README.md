@@ -49,9 +49,9 @@ The project separates the user interface, business logic, data models, and persi
    Portfolio    Transactions
 ```
 
-### Main Components
+## Main Components
 
-#### Model
+### Model
 
 Contains the core objects of the application:
 
@@ -63,23 +63,25 @@ Contains the core objects of the application:
 * `Transaction`
 * `TransactionType`
 
-#### Services
+### Services
 
-Contains the application's business logic:
+Contains the application's business logic and persistence operations:
 
 * `MarketService` — manages stocks available on the market.
 * `TradingService` — handles buying and selling stocks.
 * `TransactionService` — saves and loads transaction history.
 * `TraderPersistenceService` — saves and loads trader information and portfolio data.
 
-#### UI
+### UI
 
-* `ConsoleUI` — provides the interactive command-line interface.
+* `ConsoleUI` — provides the interactive command-line interface and handles user input.
 
-#### Exceptions
+### Exceptions
 
 * `InsufficientFundsException`
 * `InsufficientSharesException`
+
+These exceptions are used to handle specific trading errors.
 
 ## Object-Oriented Programming Concepts
 
@@ -136,7 +138,7 @@ Trader / Portfolio
 
 The UI handles interaction with the user, while the service layer handles trading operations.
 
-This makes the application easier to maintain and extend.
+This separation makes the application easier to maintain and extend.
 
 ### Enums
 
@@ -200,6 +202,8 @@ When the application starts, previously saved trader and transaction data is loa
 
 When the user exits the application, the current state is saved.
 
+This allows the application to continue from the previous session instead of starting from an empty account every time.
+
 ## Testing
 
 The project uses **JUnit 5** for automated testing.
@@ -239,5 +243,60 @@ src/test/java/
     │   └── TransactionTest.java
     │
     └── service/
-        ├── Tradin
+        ├── TradingServiceTest.java
+        ├── TransactionServiceTest.java
+        └── TraderPersistenceServiceTest.java
+```
+
+## Example
+
+When the application starts, the user is presented with the main menu:
+
+```text
+==============================
+   STOCK MARKET SIMULATOR
+==============================
+Trader: Armine
+Balance: $9338.5
+
+1. View available stocks
+2. Buy stock
+3. Sell stock
+4. View portfolio
+5. View transactions
+6. Add money
+7. Exit
+
+Choose an option:
+```
+
+### Available Stocks
+
+The simulator starts with several stocks available in the market:
+
+```text
+AAPL - Apple ($220.5)
+MSFT - Microsoft ($510.0)
+GOOG - Google ($250.0)
+AMZN - Amazon ($230.0)
+TSLA - Tesla ($350.0)
+```
+
+### Portfolio
+
+After purchasing stocks, the portfolio can display the current holdings and total value:
+
+```text
+My Portfolio:
+AAPL - 3 shares
+Total value: $661.5
+```
+
+### Transactions
+
+The application records every successful buy and sell operation:
+
+```text
+Transactions:
+BUY 3 shares of AAPL at $220.5 each | Total: $661.5 | 2026-
 ```
