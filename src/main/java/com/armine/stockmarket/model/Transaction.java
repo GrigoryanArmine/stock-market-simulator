@@ -10,40 +10,33 @@ public class Transaction {
     private final TransactionType type;
     private final LocalDateTime dateTime;
 
-    public Transaction(
-            Stock stock,
-            int quantity,
-            double pricePerShare,
-            TransactionType type
-    ) {
+    public Transaction(Stock stock, int quantity, double pricePerShare, TransactionType type) {
+        this(stock, quantity, pricePerShare, type, LocalDateTime.now());
+    }
 
+    public Transaction(Stock stock, int quantity, double pricePerShare, TransactionType type, LocalDateTime dateTime) {
         if (stock == null) {
             throw new IllegalArgumentException("Stock cannot be null.");
         }
 
         if (quantity <= 0) {
-            throw new IllegalArgumentException(
-                    "Quantity must be greater than zero."
-            );
+            throw new IllegalArgumentException("Quantity must be greater than zero.");
         }
-
         if (pricePerShare <= 0) {
-            throw new IllegalArgumentException(
-                    "Price must be greater than zero."
-            );
+            throw new IllegalArgumentException("Price must be greater than zero.");
         }
-
         if (type == null) {
-            throw new IllegalArgumentException(
-                    "Transaction type cannot be null."
-            );
+            throw new IllegalArgumentException("Transaction type cannot be null.");
+        }
+        if (dateTime == null) {
+            throw new IllegalArgumentException("Date and time cannot be null.");
         }
 
         this.stock = stock;
         this.quantity = quantity;
         this.pricePerShare = pricePerShare;
         this.type = type;
-        this.dateTime = LocalDateTime.now();
+        this.dateTime = dateTime;
     }
 
     public Stock getStock() {
