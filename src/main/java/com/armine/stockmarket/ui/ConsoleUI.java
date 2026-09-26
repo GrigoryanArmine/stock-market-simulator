@@ -6,6 +6,8 @@ import com.armine.stockmarket.model.Stock;
 import com.armine.stockmarket.model.Trader;
 import com.armine.stockmarket.service.MarketService;
 import com.armine.stockmarket.service.TradingService;
+import com.armine.stockmarket.service.TraderPersistenceService;
+import com.armine.stockmarket.service.TransactionService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,12 +18,16 @@ public class ConsoleUI {
     private MarketService marketService;
     private TradingService tradingService;
     private Scanner scanner;
+    private TraderPersistenceService traderPersistenceService;
+    private TransactionService transactionService;
 
-    public ConsoleUI(Trader trader, MarketService marketService, TradingService tradingService) {
+    public ConsoleUI(Trader trader, MarketService marketService, TradingService tradingService, TraderPersistenceService traderPersistenceService, TransactionService transactionService) {
         this.trader = trader;
         this.marketService = marketService;
         this.tradingService = tradingService;
         this.scanner = new Scanner(System.in);
+        this.traderPersistenceService = traderPersistenceService;
+        this.transactionService = transactionService;
     }
     public void start() {
         boolean running = true;
@@ -48,7 +54,10 @@ public class ConsoleUI {
                     addMoney();
                     break;
                 case 7:
+                    traderPersistenceService.saveTrader(trader);
+                    transactionService.saveTransactions(trader);
                     running = false;
+                    System.out.println("Your data has been saved.");
                     System.out.println("Goodbye!");
                     break;
                 default:
