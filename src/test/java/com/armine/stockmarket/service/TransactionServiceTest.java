@@ -1,140 +1,194 @@
 package com.armine.stockmarket.service;
 
-import com.armine.stockmarket.exception.InsufficientFundsException;
 import com.armine.stockmarket.model.Stock;
+import com.armine.stockmarket.model.Transaction;
+import com.armine.stockmarket.model.TransactionType;
 import com.armine.stockmarket.model.Trader;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TransactionServiceTest {
+class TransactionServiceTest {
 
     @Test
-    public void testSaveTransactions()
-            throws InsufficientFundsException {
+    void shouldSaveAndLoadTransactions() {
 
-        String fileName = "test-transactions.txt";
-
-        Trader trader = new Trader(
-                "Armine",
-                10000
-        );
-
-        Stock stock = new Stock(
-                "AAPL",
-                "Apple",
-                220.50
-        );
-
-        TradingService tradingService =
-                new TradingService();
-
-        tradingService.buyStock(
-                trader,
-                stock,
-                3
-        );
+        String testDirectory = "test-transactions";
 
         TransactionService transactionService =
-                new TransactionService(fileName);
-
-        transactionService.saveTransactions(trader);
-
-        File file = new File(fileName);
-
-        assertTrue(file.exists());
-
-        file.delete();
-    }
-    @Test
-    public void testLoadTransactions()
-            throws InsufficientFundsException {
-
-        String fileName = "test-transactions.txt";
-
-        Trader originalTrader = new Trader(
-                "Armine",
-                10000
-        );
-
-        Stock stock = new Stock(
-                "AAPL",
-                "Apple",
-                220.50
-        );
-
-        TradingService tradingService =
-                new TradingService();
-
-        tradingService.buyStock(
-                originalTrader,
-                stock,
-                3
-        );
-
-        TransactionService transactionService =
-                new TransactionService(fileName);
-
-        // Save the original trader's transactions
-        transactionService.saveTransactions(
-                originalTrader
-        );
-
-        // Create a completely new trader
-        Trader newTrader = new Trader(
-                "New Trader",
-                10000
-        );
+                new TransactionService(testDirectory);
 
         MarketService marketService =
                 new MarketService();
 
         marketService.initializeMarket();
 
-        // Load the saved transactions
+        Trader trader =
+                new Trader("Armine", 10000);
+
+        Stock apple =
+                marketService.findStock("AAPL");
+
+        Transaction transaction =
+                new Transaction(
+                        apple,
+                        3,
+                        apple.getCurrentPrice(),
+                        TransactionType.BUY,
+                        LocalDateTime.now()
+                );
+
+        trader.addTransaction(transaction);
+
+        transactionService.saveTransactions(trader);
+
+        Trader loadedTrader =
+                new Trader("Armine", 10000);
+
         transactionService.loadTransactions(
-                newTrader,
+                loadedTrader,
                 marketService
         );
 
         assertEquals(
                 1,
-                newTrader.getTransactions().size()
+                loadedTrader.getTransactions().size()
+        );
+
+        Transaction loadedTransaction =
+                loadedTrader.getTransactions().get(0);
+
+        assertEquals(
+                TransactionType.BUY,
+                loadedTransaction.getType()
         );
 
         assertEquals(
                 "AAPL",
-                newTrader.getTransactions()
+                loadedTransaction.getStock().getSymbol()
+        );
+
+        assertEquals(
+                3,
+                loadedTransaction.getQuantity()
+        );
+
+        deleteDirectory(testDirectory);
+    }
+
+    @Test
+    void shouldKeepTraderTransactionsSeparate() {
+
+        String testDirectory =
+                "test-transactions-separate";
+
+        TransactionService transactionService =
+                new TransactionService(testDirectory);
+
+        MarketService marketService =
+                new MarketService();
+
+        marketService.initializeMarket();
+
+        Trader anna =
+                new Trader("Anna", 10000);
+
+        Trader david =
+                new Trader("David", 10000);
+
+        Stock apple =
+                marketService.findStock("AAPL");
+
+        Stock tesla =
+                marketService.findStock("TSLA");
+
+        anna.addTransaction(
+                new Transaction(
+                        apple,
+                        2,
+                        apple.getCurrentPrice(),
+                        TransactionType.BUY,
+                        LocalDateTime.now()
+                )
+        );
+
+        david.addTransaction(
+                new Transaction(
+                        tesla,
+                        4,
+                        tesla.getCurrentPrice(),
+                        TransactionType.BUY,
+                        LocalDateTime.now()
+                )
+        );
+
+        transactionService.saveTransactions(anna);
+        transactionService.saveTransactions(david);
+
+        Trader loadedAnna =
+                new Trader("Anna", 10000);
+
+        Trader loadedDavid =
+                new Trader("David", 10000);
+
+        transactionService.loadTransactions(
+                loadedAnna,
+                marketService
+        );
+
+        transactionService.loadTransactions(
+                loadedDavid,
+                marketService
+        );
+
+        assertEquals(
+                1,
+                loadedAnna.getTransactions().size()
+        );
+
+        assertEquals(
+                "AAPL",
+                loadedAnna.getTransactions()
                         .get(0)
                         .getStock()
                         .getSymbol()
         );
 
         assertEquals(
-                3,
-                newTrader.getTransactions()
-                        .get(0)
-                        .getQuantity()
+                1,
+                loadedDavid.getTransactions().size()
         );
 
         assertEquals(
-                220.50,
-                newTrader.getTransactions()
+                "TSLA",
+                loadedDavid.getTransactions()
                         .get(0)
-                        .getPricePerShare()
+                        .getStock()
+                        .getSymbol()
         );
 
-        assertEquals(
-                "BUY",
-                newTrader.getTransactions()
-                        .get(0)
-                        .getType()
-                        .toString()
-        );
+        deleteDirectory(testDirectory);
+    }
 
-        File file = new File(fileName);
-        file.delete();
+    private void deleteDirectory(
+            String directoryName
+    ) {
+
+        File directory =
+                new File(directoryName);
+
+        File[] files =
+                directory.listFiles();
+
+        if (files != null) {
+            for (File file : files) {
+                file.delete();
+            }
+        }
+
+        directory.delete();
     }
 }

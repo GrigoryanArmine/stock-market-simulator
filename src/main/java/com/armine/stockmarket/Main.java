@@ -3,59 +3,43 @@ package com.armine.stockmarket;
 import com.armine.stockmarket.model.Trader;
 import com.armine.stockmarket.service.MarketService;
 import com.armine.stockmarket.service.TraderPersistenceService;
-import com.armine.stockmarket.service.TransactionService;
+import com.armine.stockmarket.service.TraderService;
+import com.armine.stockmarket.ui.MainMenuUI;
 import com.armine.stockmarket.service.TradingService;
-import com.armine.stockmarket.ui.ConsoleUI;
+import com.armine.stockmarket.service.TransactionService;
+import java.util.List;
 
 public class Main {
 
     public static void main(String[] args) {
-
-        MarketService marketService =
-                new MarketService();
-
+        // Create the market
+        MarketService marketService = new MarketService();
         marketService.initializeMarket();
 
-        TraderPersistenceService traderPersistenceService =
-                new TraderPersistenceService(
-                        "trader.txt"
-                );
 
-        TransactionService transactionService =
-                new TransactionService(
-                        "transactions.txt"
-                );
+        // Create persistence service
+        TraderPersistenceService traderPersistenceService = new TraderPersistenceService("traders");
 
-        Trader trader =
-                traderPersistenceService.loadTrader(
-                        marketService
-                );
+        // Create trader service
+        TraderService traderService = new TraderService();
+        TradingService tradingService = new TradingService();
+        TransactionService transactionService = new TransactionService("transactions");
+        // Load all previously saved traders
+        List<Trader> savedTraders = traderPersistenceService.loadAllTraders(marketService);
 
-        if (trader == null) {
-
-            trader = new Trader(
-                    "Armine",
-                    10000
-            );
+        // Add loaded traders to TraderService
+        for (Trader trader : savedTraders) {
+            traderService.addTrader(trader);
         }
 
-        transactionService.loadTransactions(
-                trader,
-                marketService
-        );
-
-        TradingService tradingService =
-                new TradingService();
-
-        ConsoleUI consoleUI =
-                new ConsoleUI(
-                        trader,
+        // Create and start the main menu
+        MainMenuUI mainMenuUI = new MainMenuUI(
+                        traderService,
+                        traderPersistenceService,
                         marketService,
                         tradingService,
-                        traderPersistenceService,
-                        transactionService
-                );
+                        transactionService);
 
-        consoleUI.start();
+        mainMenuUI.start();
     }
 }

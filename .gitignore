@@ -29,3 +29,8 @@ target/
 # JVM crash logs
 hs_err_pid*
 replay_pid*
+# Runtime data
+trader.txt
+transactions.txt
+traders/
+transactions/

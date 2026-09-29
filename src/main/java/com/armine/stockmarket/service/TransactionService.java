@@ -12,25 +12,27 @@ import java.time.LocalDateTime;
 import java.util.Scanner;
 
 public class TransactionService {
+    private String directoryName;
 
-    private String fileName;
-
-    public TransactionService(String fileName) {
-        this.fileName = fileName;
+    public TransactionService(String directoryName) {
+        this.directoryName = directoryName;
     }
 
     public void saveTransactions(Trader trader) {
 
-        try {
+        if (trader == null) {
+            throw new IllegalArgumentException("Trader cannot be null.");
+        }
+        File directory = new File(directoryName);
 
-            FileWriter writer =
-                    new FileWriter(fileName);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        File file = new File(directory, trader.getName() + ".txt");
 
-            for (Transaction transaction :
-                    trader.getTransactions()) {
-
-                writer.write(
-                        transaction.getType()
+        try (FileWriter writer = new FileWriter(file)) {
+            for (Transaction transaction : trader.getTransactions()) {
+                writer.write(transaction.getType()
                                 + ","
                                 + transaction.getStock().getSymbol()
                                 + ","
@@ -44,93 +46,51 @@ public class TransactionService {
                                 + "\n"
                 );
             }
-
-            writer.close();
-
         } catch (IOException e) {
-
-            System.out.println(
-                    "Could not save transactions: "
-                            + e.getMessage()
-            );
+            System.out.println("Could not save transactions: " + e.getMessage());
         }
     }
 
-    public void loadTransactions(
-            Trader trader,
-            MarketService marketService
-    ) {
-
-        File file = new File(fileName);
-
+    public void loadTransactions(Trader trader, MarketService marketService) {
+        if (trader == null) {
+            throw new IllegalArgumentException("Trader cannot be null.");
+        }
+        File file = new File(directoryName, trader.getName() + ".txt");
         if (!file.exists()) {
             return;
         }
 
-        try {
-
-            Scanner fileScanner =
-                    new Scanner(file);
-
+        try (Scanner fileScanner = new Scanner(file)) {
             while (fileScanner.hasNextLine()) {
+                String line = fileScanner.nextLine();
+                if (line.isBlank()) {
+                    continue;
+                }
+                String[] parts = line.split(",");
+                if (parts.length != 6) {
+                    continue;
+                }
 
-                String line =
-                        fileScanner.nextLine();
+                TransactionType type = TransactionType.valueOf(parts[0]);
+                String symbol = parts[1];
+                String companyName = parts[2];
+                int quantity = Integer.parseInt(parts[3]);
+                double price = Double.parseDouble(parts[4]);
+                LocalDateTime dateTime = LocalDateTime.parse(parts[5]);
 
-                String[] parts =
-                        line.split(",");
-
-                TransactionType type =
-                        TransactionType.valueOf(parts[0]);
-
-                String symbol =
-                        parts[1];
-
-                String companyName =
-                        parts[2];
-
-                int quantity =
-                        Integer.parseInt(parts[3]);
-
-                double price =
-                        Double.parseDouble(parts[4]);
-
-                LocalDateTime dateTime =
-                        LocalDateTime.parse(parts[5]);
-
-                Stock stock =
-                        marketService.findStock(symbol);
+                Stock stock = marketService.findStock(symbol);
 
                 if (stock == null) {
-
-                    stock = new Stock(
-                            symbol,
-                            companyName,
-                            price
-                    );
-
+                    stock = new Stock(symbol, companyName, price);
                     marketService.addStock(stock);
                 }
 
-                Transaction transaction =
-                        new Transaction(
-                                stock,
-                                quantity,
-                                price,
-                                type,
-                                dateTime
-                        );
-
+                Transaction transaction = new Transaction(stock, quantity, price, type, dateTime);
                 trader.addTransaction(transaction);
             }
 
-            fileScanner.close();
-
         } catch (IOException | RuntimeException e) {
-
-            System.out.println(
-                    "Could not load transactions: "
-                            + e.getMessage()
+            System.out.println("Could not load transactions: " + e.getMessage()
             );
         }
     }

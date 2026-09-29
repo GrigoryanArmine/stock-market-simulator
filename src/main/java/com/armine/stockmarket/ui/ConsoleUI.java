@@ -58,7 +58,7 @@ public class ConsoleUI {
                     transactionService.saveTransactions(trader);
                     running = false;
                     System.out.println("Your data has been saved.");
-                    System.out.println("Goodbye!");
+                    System.out.println("Logged out successfully.");
                     break;
                 default:
                     System.out.println("Invalid option.");
@@ -81,7 +81,7 @@ public class ConsoleUI {
         System.out.println("4. View portfolio");
         System.out.println("5. View transactions");
         System.out.println("6. Add money");
-        System.out.println("7. Exit");
+        System.out.println("7. Logout");
         System.out.println();
         System.out.print("Choose an option: ");
     }
