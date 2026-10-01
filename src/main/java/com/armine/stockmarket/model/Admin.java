@@ -9,12 +9,9 @@ public class Admin extends User {
 
     public void addStockToMarket(Stock stock, MarketService marketService) {
         if (stock == null) {
-            throw new IllegalArgumentException(
-                    "Stock cannot be null."
-            );
+            throw new IllegalArgumentException("Stock cannot be null.");
         }
         marketService.addStock(stock);
-        System.out.println("Stock added successfully.");
     }
 
     @Override

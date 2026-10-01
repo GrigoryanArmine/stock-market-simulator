@@ -6,6 +6,7 @@ import com.armine.stockmarket.service.TraderPersistenceService;
 import com.armine.stockmarket.service.TraderService;
 import com.armine.stockmarket.service.TradingService;
 import com.armine.stockmarket.service.TransactionService;
+import com.armine.stockmarket.model.Admin;
 
 import java.util.List;
 import java.util.Scanner;
@@ -86,7 +87,9 @@ public class MainMenuUI {
                     createTrader();
                     break;
                 case "3":
-                    System.out.println("Admin - coming later.");
+                    Admin admin = new Admin("Administrator");
+                    AdminUI adminUI = new AdminUI(admin, marketService, traderService);
+                    adminUI.start();
                     break;
                 case "4":
                     running = false;

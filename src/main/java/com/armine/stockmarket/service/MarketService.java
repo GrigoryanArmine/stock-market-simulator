@@ -50,6 +50,13 @@ public class MarketService {
         }
         stock.updatePrice(newPrice);
     }
+    public void removeStock(String symbol) {
+        Stock stock = findStock(symbol);
+        if (stock == null) {
+            throw new IllegalArgumentException("Stock not found.");
+        }
+        stocks.remove(stock.getSymbol());
+    }
     public void initializeMarket() {
 
         addStock(new Stock(
