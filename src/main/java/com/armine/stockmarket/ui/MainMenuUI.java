@@ -73,7 +73,6 @@ public class MainMenuUI {
                 case "1":
                     Trader selectedTrader = selectTrader();
                     if (selectedTrader != null) {
-                        transactionService.loadTransactions(selectedTrader, marketService);
                         ConsoleUI consoleUI = new ConsoleUI(
                                         selectedTrader,
                                         marketService,

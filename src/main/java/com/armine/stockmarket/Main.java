@@ -28,7 +28,9 @@ public class Main {
         List<Trader> savedTraders = traderPersistenceService.loadAllTraders(marketService);
 
         // Add loaded traders to TraderService
+        // Add loaded traders to TraderService
         for (Trader trader : savedTraders) {
+            transactionService.loadTransactions(trader, marketService);
             traderService.addTrader(trader);
         }
 
