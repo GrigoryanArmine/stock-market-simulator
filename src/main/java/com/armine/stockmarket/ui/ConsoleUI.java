@@ -72,7 +72,7 @@ public class ConsoleUI {
         System.out.println("==============================");
         System.out.println("   STOCK MARKET SIMULATOR");
         System.out.println("==============================");
-        System.out.println("Trader: " + trader.getName());
+        System.out.println("Trader: " + trader.getFullName());
         System.out.println("Balance: $" + trader.getBalance());
         System.out.println();
         System.out.println("1. View available stocks");

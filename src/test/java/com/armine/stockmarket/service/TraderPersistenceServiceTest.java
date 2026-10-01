@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class TraderPersistenceServiceTest {
@@ -24,7 +25,13 @@ class TraderPersistenceServiceTest {
         marketService.initializeMarket();
 
         Trader trader =
-                new Trader("Armine", 10000);
+                new Trader(
+                        123456,
+                        "armine",
+                        "Armine",
+                        "Grigoryan",
+                        10000
+                );
 
         Stock apple =
                 marketService.findStock("AAPL");
@@ -36,19 +43,37 @@ class TraderPersistenceServiceTest {
 
         Trader loadedTrader =
                 persistenceService.loadTrader(
-                        "Armine",
+                        "armine",
                         marketService
                 );
 
         assertNotNull(loadedTrader);
+
+        assertEquals(
+                123456,
+                loadedTrader.getId()
+        );
+
+        assertEquals(
+                "armine",
+                loadedTrader.getUsername()
+        );
+
         assertEquals(
                 "Armine",
-                loadedTrader.getName()
+                loadedTrader.getFirstName()
         );
+
+        assertEquals(
+                "Grigoryan",
+                loadedTrader.getSurname()
+        );
+
         assertEquals(
                 10000,
                 loadedTrader.getBalance()
         );
+
         assertEquals(
                 3,
                 loadedTrader.getPortfolio()
@@ -72,10 +97,22 @@ class TraderPersistenceServiceTest {
         marketService.initializeMarket();
 
         Trader armine =
-                new Trader("Armine", 10000);
+                new Trader(
+                        123456,
+                        "armine",
+                        "Armine",
+                        "Grigoryan",
+                        10000
+                );
 
         Trader anna =
-                new Trader("Anna", 5000);
+                new Trader(
+                        654321,
+                        "anna",
+                        "Anna",
+                        "Smith",
+                        5000
+                );
 
         Stock apple =
                 marketService.findStock("AAPL");
@@ -94,13 +131,13 @@ class TraderPersistenceServiceTest {
 
         Trader loadedArmine =
                 persistenceService.loadTrader(
-                        "Armine",
+                        "armine",
                         marketService
                 );
 
         Trader loadedAnna =
                 persistenceService.loadTrader(
-                        "Anna",
+                        "anna",
                         marketService
                 );
 
@@ -134,24 +171,6 @@ class TraderPersistenceServiceTest {
         deleteDirectory(testDirectory);
     }
 
-    private void deleteDirectory(
-            String directoryName
-    ) {
-
-        File directory =
-                new File(directoryName);
-
-        File[] files =
-                directory.listFiles();
-
-        if (files != null) {
-            for (File file : files) {
-                file.delete();
-            }
-        }
-
-        directory.delete();
-    }
     @Test
     void shouldLoadAllTraders() {
 
@@ -166,13 +185,31 @@ class TraderPersistenceServiceTest {
         marketService.initializeMarket();
 
         Trader armine =
-                new Trader("Armine", 10000);
+                new Trader(
+                        123456,
+                        "armine",
+                        "Armine",
+                        "Grigoryan",
+                        10000
+                );
 
         Trader anna =
-                new Trader("Anna", 8000);
+                new Trader(
+                        234567,
+                        "anna",
+                        "Anna",
+                        "Smith",
+                        8000
+                );
 
         Trader david =
-                new Trader("David", 12000);
+                new Trader(
+                        345678,
+                        "david",
+                        "David",
+                        "Brown",
+                        12000
+                );
 
         persistenceService.saveTrader(armine);
         persistenceService.saveTrader(anna);
@@ -185,27 +222,46 @@ class TraderPersistenceServiceTest {
 
         assertEquals(3, traders.size());
 
-        assertTrue(
-                traders.stream()
-                        .anyMatch(trader ->
-                                trader.getName()
-                                        .equals("Armine"))
-        );
+        boolean armineFound = false;
+        boolean annaFound = false;
+        boolean davidFound = false;
 
-        assertTrue(
-                traders.stream()
-                        .anyMatch(trader ->
-                                trader.getName()
-                                        .equals("Anna"))
-        );
+        for (Trader trader : traders) {
 
-        assertTrue(
-                traders.stream()
-                        .anyMatch(trader ->
-                                trader.getName()
-                                        .equals("David"))
-        );
+            if (trader.getUsername().equals("armine")) {
+                armineFound = true;
+            }
+
+            if (trader.getUsername().equals("anna")) {
+                annaFound = true;
+            }
+
+            if (trader.getUsername().equals("david")) {
+                davidFound = true;
+            }
+        }
+
+        assertTrue(armineFound);
+        assertTrue(annaFound);
+        assertTrue(davidFound);
 
         deleteDirectory(testDirectory);
+    }
+
+    private void deleteDirectory(String directoryName) {
+
+        File directory =
+                new File(directoryName);
+
+        File[] files =
+                directory.listFiles();
+
+        if (files != null) {
+            for (File file : files) {
+                file.delete();
+            }
+        }
+
+        directory.delete();
     }
 }

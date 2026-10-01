@@ -1,28 +1,36 @@
 package com.armine.stockmarket.model;
 
 public class User {
-    private String name;
+    private String firstName;
+    private String surname;
 
-    public User(String name) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("User name cannot be empty.");
+    public User(String firstName, String surname) {
+        if (firstName == null || firstName.isBlank()) {
+            throw new IllegalArgumentException("First name cannot be empty.");
         }
-        this.name = name;
+
+        if (surname == null || surname.isBlank()) {
+            throw new IllegalArgumentException("Surname cannot be empty.");
+        }
+
+        this.firstName = firstName;
+        this.surname = surname;
     }
 
-    public String getName() {
-        return name;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setName(String name) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("User name cannot be empty.");
-        }
-        this.name = name;
+    public String getSurname() {
+        return surname;
+    }
+
+    public String getFullName() {
+        return firstName + " " + surname;
     }
 
     @Override
     public String toString() {
-        return "User: " + name;
+        return getFullName();
     }
 }

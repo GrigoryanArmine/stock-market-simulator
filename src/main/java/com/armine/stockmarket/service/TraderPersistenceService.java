@@ -25,13 +25,18 @@ public class TraderPersistenceService {
         if (!directory.exists()) {
             directory.mkdirs();
         }
-        File file = new File(directory, trader.getName() + ".txt");
+        File file = new File(directory, trader.getUsername() + ".txt");
         try (FileWriter writer = new FileWriter(file)) {
-            writer.write(trader.getName() + "\n");
+            writer.write(trader.getId() + "\n");
+            writer.write(trader.getUsername() + "\n");
+            writer.write(trader.getFirstName() + "\n");
+            writer.write(trader.getSurname() + "\n");
             writer.write(trader.getBalance() + "\n");
+
             for (Stock stock : trader.getPortfolio().getHoldings().keySet()) {
                 int quantity = trader.getPortfolio().getQuantity(stock);
-                writer.write(stock.getSymbol()
+                writer.write(
+                        stock.getSymbol()
                                 + ","
                                 + stock.getCompanyName()
                                 + ","
@@ -46,18 +51,23 @@ public class TraderPersistenceService {
         }
     }
 
-    public Trader loadTrader(String name, MarketService marketService) {
-        if (name == null || name.isBlank()) {
+    public Trader loadTrader(String username, MarketService marketService) {
+        if (username == null || username.isBlank()) {
             return null;
         }
-        File file = new File(directoryName, name + ".txt");
+        File file = new File(directoryName, username + ".txt");
         if (!file.exists()) {
             return null;
         }
         try (Scanner fileScanner = new Scanner(file)) {
-            String traderName = fileScanner.nextLine();
+            int id = Integer.parseInt(fileScanner.nextLine());
+            String savedUsername = fileScanner.nextLine();
+            String firstName = fileScanner.nextLine();
+            String surname = fileScanner.nextLine();
             double balance = Double.parseDouble(fileScanner.nextLine());
-            Trader trader = new Trader(traderName, balance);
+
+            Trader trader = new Trader(id, savedUsername, firstName, surname, balance);
+
             while (fileScanner.hasNextLine()) {
                 String line = fileScanner.nextLine();
                 if (line.isBlank()) {
@@ -71,7 +81,9 @@ public class TraderPersistenceService {
                 String companyName = parts[1];
                 double price = Double.parseDouble(parts[2]);
                 int quantity = Integer.parseInt(parts[3]);
+
                 Stock stock = marketService.findStock(symbol);
+
                 if (stock == null) {
                     stock = new Stock(symbol, companyName, price);
                     marketService.addStock(stock);
@@ -84,6 +96,7 @@ public class TraderPersistenceService {
             return null;
         }
     }
+
     public List<Trader> loadAllTraders(MarketService marketService) {
         List<Trader> traders = new ArrayList<>();
         File directory = new File(directoryName);
@@ -96,14 +109,14 @@ public class TraderPersistenceService {
         }
         for (File file : files) {
             String fileName = file.getName();
-            String traderName = fileName.substring(0, fileName.length() - 4);
 
-            Trader trader = loadTrader(traderName, marketService);
+            String username = fileName.substring(0, fileName.length() - 4);
+
+            Trader trader = loadTrader(username, marketService);
             if (trader != null) {
                 traders.add(trader);
             }
         }
-
         return traders;
     }
 }

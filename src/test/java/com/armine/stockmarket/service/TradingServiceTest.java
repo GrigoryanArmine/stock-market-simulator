@@ -13,7 +13,13 @@ public class TradingServiceTest {
     @Test
     public void testBuyStock() throws InsufficientFundsException {
 
-        Trader trader = new Trader("Armine", 10000);
+        Trader trader = new Trader(
+                123456,
+                "armine",
+                "Armine",
+                "Grigoryan",
+                10000
+        );
 
         Stock stock = new Stock(
                 "AAPL",
@@ -51,7 +57,13 @@ public class TradingServiceTest {
             throws InsufficientFundsException,
             InsufficientSharesException {
 
-        Trader trader = new Trader("Armine", 10000);
+        Trader trader = new Trader(
+                123456,
+                "armine",
+                "Armine",
+                "Grigoryan",
+                10000
+        );
 
         Stock stock = new Stock(
                 "AAPL",
@@ -93,7 +105,13 @@ public class TradingServiceTest {
     @Test
     public void testCannotBuyWithoutEnoughMoney() {
 
-        Trader trader = new Trader("Armine", 100);
+        Trader trader = new Trader(
+                123456,
+                "armine",
+                "Armine",
+                "Grigoryan",
+                100
+        );
 
         Stock stock = new Stock(
                 "AAPL",
@@ -118,7 +136,13 @@ public class TradingServiceTest {
     public void testCannotSellMoreSharesThanOwned()
             throws InsufficientFundsException {
 
-        Trader trader = new Trader("Armine", 10000);
+        Trader trader = new Trader(
+                123456,
+                "armine",
+                "Armine",
+                "Grigoryan",
+                10000
+        );
 
         Stock stock = new Stock(
                 "AAPL",
@@ -149,7 +173,13 @@ public class TradingServiceTest {
     public void testCannotBuyNegativeQuantity()
             throws InsufficientFundsException {
 
-        Trader trader = new Trader("Armine", 10000);
+        Trader trader = new Trader(
+                123456,
+                "armine",
+                "Armine",
+                "Grigoryan",
+                10000
+        );
 
         Stock stock = new Stock(
                 "AAPL",

@@ -26,7 +26,7 @@ public class AdminUI {
         System.out.println("==============================");
         System.out.println("          ADMIN MENU");
         System.out.println("==============================");
-        System.out.println("Admin: " + admin.getName());
+        System.out.println("Admin: " + admin.getFullName());
         System.out.println();
         System.out.println("1. View all stocks");
         System.out.println("2. Add stock");
@@ -117,7 +117,7 @@ public class AdminUI {
     private void updateStockPrice() {
         System.out.println();
         System.out.println("Update stock price:");
-
+        showStocks();
         System.out.print("Enter stock symbol: ");
         String symbol = scanner.nextLine().trim().toUpperCase();
 
@@ -144,7 +144,7 @@ public class AdminUI {
     private void removeStock() {
         System.out.println();
         System.out.println("Remove stock:");
-
+        showStocks();
         System.out.print("Enter stock symbol: ");
         String symbol = scanner.nextLine().trim().toUpperCase();
 
@@ -172,7 +172,11 @@ public class AdminUI {
             return;
         }
         for (Trader trader : traderService.getAllTraders()) {
-            System.out.println(trader.getName() + " - Balance: $" + trader.getBalance());
+            System.out.println("ID: " + trader.getId()
+                            + " | Username: " + trader.getUsername()
+                            + " | Name: " + trader.getFullName()
+                            + " | Balance: $" + trader.getBalance()
+            );
         }
     }
 

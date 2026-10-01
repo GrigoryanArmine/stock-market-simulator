@@ -8,7 +8,6 @@ import com.armine.stockmarket.service.TradingService;
 import com.armine.stockmarket.service.TransactionService;
 import com.armine.stockmarket.model.Admin;
 
-import java.util.List;
 import java.util.Scanner;
 
 public class MainMenuUI {
@@ -18,19 +17,22 @@ public class MainMenuUI {
     private TradingService tradingService;
     private TransactionService transactionService;
     private Scanner scanner;
+    private Admin admin;
 
     public MainMenuUI(
             TraderService traderService,
             TraderPersistenceService traderPersistenceService,
             MarketService marketService,
             TradingService tradingService,
-            TransactionService transactionService) {
+            TransactionService transactionService,
+            Admin admin) {
         this.traderService = traderService;
         this.traderPersistenceService = traderPersistenceService;
         this.marketService = marketService;
         this.tradingService = tradingService;
         this.transactionService = transactionService;
         this.scanner = new Scanner(System.in);
+        this.admin = admin;
     }
 
     public void showMenu() {
@@ -39,59 +41,66 @@ public class MainMenuUI {
         System.out.println("   STOCK MARKET SIMULATOR");
         System.out.println("==============================");
         System.out.println();
-        System.out.println("1. Select trader");
-        System.out.println("2. Create new trader");
-        System.out.println("3. Admin");
-        System.out.println("4. Exit");
+        System.out.println("1. Trader");
+        System.out.println("2. Admin");
+        System.out.println("3. Exit");
         System.out.println();
         System.out.print("Choose an option: ");
     }
-    private void createTrader() {
+    private void createAccount() {
         System.out.println();
-        System.out.print("Enter trader name: ");
-        String name = scanner.nextLine().trim();
+        System.out.print("Enter first name: ");
+        String firstName = scanner.nextLine().trim();
 
-        if (name.isBlank()) {
-            System.out.println("Trader name cannot be empty.");
-            return;
-        }
-        if (traderService.findTrader(name) != null) {
-            System.out.println("Trader already exists.");
+        if (firstName.isBlank()) {
+            System.out.println("First name cannot be empty.");
             return;
         }
 
-        Trader trader = new Trader(name, 10000);
+        System.out.print("Enter surname: ");
+        String surname = scanner.nextLine().trim();
+        if (surname.isBlank()) {
+            System.out.println("Surname cannot be empty.");
+            return;
+        }
+
+        System.out.print("Choose a username: ");
+        String username = scanner.nextLine().trim();
+        if (username.isBlank()) {
+            System.out.println("Username cannot be empty.");
+            return;
+        }
+
+        if (traderService.findTraderByUsername(username) != null) {
+            System.out.println("Username already exists.");
+            return;
+        }
+
+        int id = traderService.generateUniqueId();
+        Trader trader = new Trader(id, username, firstName, surname, 10000);
+
         traderService.addTrader(trader);
         traderPersistenceService.saveTrader(trader);
-        System.out.println("Trader " + name + " created successfully.");
+
+        System.out.println("Account created successfully!");
+        System.out.println("Trader ID: " + id);
+        System.out.println("Username: " + username);
     }
     public void start() {
         boolean running = true;
+
         while (running) {
             showMenu();
             String input = scanner.nextLine();
             switch (input) {
                 case "1":
-                    Trader selectedTrader = selectTrader();
-                    if (selectedTrader != null) {
-                        ConsoleUI consoleUI = new ConsoleUI(
-                                        selectedTrader,
-                                        marketService,
-                                        tradingService,
-                                        traderPersistenceService,
-                                        transactionService);
-                        consoleUI.start();
-                    }
+                    showTraderMenu();
                     break;
                 case "2":
-                    createTrader();
-                    break;
-                case "3":
-                    Admin admin = new Admin("Administrator");
                     AdminUI adminUI = new AdminUI(admin, marketService, traderService);
                     adminUI.start();
                     break;
-                case "4":
+                case "3":
                     running = false;
                     System.out.println("Goodbye!");
                     break;
@@ -100,38 +109,63 @@ public class MainMenuUI {
             }
         }
     }
-    private Trader selectTrader() {
-        List<Trader> traders = traderService.getAllTraders();
+    private void showTraderMenu() {
+        boolean running = true;
 
-        if (traders.isEmpty()) {
+        while (running) {
             System.out.println();
-            System.out.println("No traders available.");
-            System.out.println("Create a trader first.");
-            return null;
-        }
-        System.out.println();
-        System.out.println("Available traders:");
+            System.out.println("==============================");
+            System.out.println("         TRADER MENU");
+            System.out.println("==============================");
+            System.out.println();
+            System.out.println("1. Login");
+            System.out.println("2. Create account");
+            System.out.println("3. Back");
+            System.out.println();
+            System.out.print("Choose an option: ");
 
-        for (int i = 0; i < traders.size(); i++) {
-            System.out.println((i + 1) + ". " + traders.get(i).getName());
-        }
-        while (true) {
-            System.out.println();
-            System.out.print("Choose trader number: ");
             String input = scanner.nextLine();
-
-            try {
-
-                int choice = Integer.parseInt(input);
-                if (choice < 1 || choice > traders.size()) {
-                    System.out.println("Invalid trader number.");
-                    continue;
-                }
-                return traders.get(choice - 1);
-
-            } catch (NumberFormatException e) {
-                System.out.println("Please enter a number.");
+            switch (input) {
+                case "1":
+                    Trader selectedTrader = login();
+                    if (selectedTrader != null) {
+                        ConsoleUI consoleUI = new ConsoleUI(
+                                        selectedTrader,
+                                        marketService,
+                                        tradingService,
+                                        traderPersistenceService,
+                                        transactionService
+                        );
+                        consoleUI.start();
+                    }
+                    break;
+                case "2":
+                    createAccount();
+                    break;
+                case "3":
+                    running = false;
+                    break;
+                default:
+                    System.out.println("Invalid option.");
             }
         }
+    }
+    private Trader login() {
+        System.out.println();
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine().trim();
+        if (username.isBlank()) {
+            System.out.println("Username cannot be empty.");
+            return null;
+        }
+
+        Trader trader = traderService.findTraderByUsername(username);
+        if (trader == null) {
+            System.out.println("Account not found.");
+            return null;
+        }
+
+        System.out.println("Welcome, " + trader.getFirstName() + "!");
+        return trader;
     }
 }

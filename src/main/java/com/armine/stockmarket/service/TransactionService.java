@@ -28,7 +28,7 @@ public class TransactionService {
         if (!directory.exists()) {
             directory.mkdirs();
         }
-        File file = new File(directory, trader.getName() + ".txt");
+        File file = new File(directory, trader.getUsername() + ".txt");
 
         try (FileWriter writer = new FileWriter(file)) {
             for (Transaction transaction : trader.getTransactions()) {
@@ -55,7 +55,7 @@ public class TransactionService {
         if (trader == null) {
             throw new IllegalArgumentException("Trader cannot be null.");
         }
-        File file = new File(directoryName, trader.getName() + ".txt");
+        File file = new File(directoryName, trader.getUsername() + ".txt");
         if (!file.exists()) {
             return;
         }
@@ -90,8 +90,7 @@ public class TransactionService {
             }
 
         } catch (IOException | RuntimeException e) {
-            System.out.println("Could not load transactions: " + e.getMessage()
-            );
+            System.out.println("Could not load transactions: " + e.getMessage());
         }
     }
 }

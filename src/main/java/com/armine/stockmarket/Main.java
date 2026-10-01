@@ -1,33 +1,38 @@
 package com.armine.stockmarket;
 
+import com.armine.stockmarket.model.Admin;
 import com.armine.stockmarket.model.Trader;
 import com.armine.stockmarket.service.MarketService;
 import com.armine.stockmarket.service.TraderPersistenceService;
 import com.armine.stockmarket.service.TraderService;
-import com.armine.stockmarket.ui.MainMenuUI;
 import com.armine.stockmarket.service.TradingService;
 import com.armine.stockmarket.service.TransactionService;
+import com.armine.stockmarket.ui.MainMenuUI;
+
 import java.util.List;
 
 public class Main {
 
     public static void main(String[] args) {
+
         // Create the market
         MarketService marketService = new MarketService();
         marketService.initializeMarket();
 
-
         // Create persistence service
         TraderPersistenceService traderPersistenceService = new TraderPersistenceService("traders");
 
-        // Create trader service
+        // Create services
         TraderService traderService = new TraderService();
         TradingService tradingService = new TradingService();
         TransactionService transactionService = new TransactionService("transactions");
+
+        // Create the admin
+        Admin admin = new Admin("System", "Administrator");
+
         // Load all previously saved traders
         List<Trader> savedTraders = traderPersistenceService.loadAllTraders(marketService);
 
-        // Add loaded traders to TraderService
         // Add loaded traders to TraderService
         for (Trader trader : savedTraders) {
             transactionService.loadTransactions(trader, marketService);
@@ -36,12 +41,13 @@ public class Main {
 
         // Create and start the main menu
         MainMenuUI mainMenuUI = new MainMenuUI(
-                        traderService,
-                        traderPersistenceService,
-                        marketService,
-                        tradingService,
-                        transactionService);
-
+                traderService,
+                traderPersistenceService,
+                marketService,
+                tradingService,
+                transactionService,
+                admin
+        );
         mainMenuUI.start();
     }
 }

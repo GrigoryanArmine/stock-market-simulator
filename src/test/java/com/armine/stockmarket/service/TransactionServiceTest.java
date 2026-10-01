@@ -27,7 +27,13 @@ class TransactionServiceTest {
         marketService.initializeMarket();
 
         Trader trader =
-                new Trader("Armine", 10000);
+                new Trader(
+                        123456,
+                        "armine",
+                        "Armine",
+                        "Grigoryan",
+                        10000
+                );
 
         Stock apple =
                 marketService.findStock("AAPL");
@@ -46,7 +52,13 @@ class TransactionServiceTest {
         transactionService.saveTransactions(trader);
 
         Trader loadedTrader =
-                new Trader("Armine", 10000);
+                new Trader(
+                        123456,
+                        "armine",
+                        "Armine",
+                        "Grigoryan",
+                        10000
+                );
 
         transactionService.loadTransactions(
                 loadedTrader,
@@ -94,10 +106,22 @@ class TransactionServiceTest {
         marketService.initializeMarket();
 
         Trader anna =
-                new Trader("Anna", 10000);
+                new Trader(
+                        123456,
+                        "anna",
+                        "Anna",
+                        "Smith",
+                        10000
+                );
 
         Trader david =
-                new Trader("David", 10000);
+                new Trader(
+                        654321,
+                        "david",
+                        "David",
+                        "Brown",
+                        10000
+                );
 
         Stock apple =
                 marketService.findStock("AAPL");
@@ -129,10 +153,22 @@ class TransactionServiceTest {
         transactionService.saveTransactions(david);
 
         Trader loadedAnna =
-                new Trader("Anna", 10000);
+                new Trader(
+                        123456,
+                        "anna",
+                        "Anna",
+                        "Smith",
+                        10000
+                );
 
         Trader loadedDavid =
-                new Trader("David", 10000);
+                new Trader(
+                        654321,
+                        "david",
+                        "David",
+                        "Brown",
+                        10000
+                );
 
         transactionService.loadTransactions(
                 loadedAnna,
@@ -173,9 +209,7 @@ class TransactionServiceTest {
         deleteDirectory(testDirectory);
     }
 
-    private void deleteDirectory(
-            String directoryName
-    ) {
+    private void deleteDirectory(String directoryName) {
 
         File directory =
                 new File(directoryName);
