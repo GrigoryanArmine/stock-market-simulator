@@ -4,11 +4,11 @@ import java.time.LocalDateTime;
 
 public class Transaction {
 
-    private final Stock stock;
-    private final int quantity;
-    private final double pricePerShare;
-    private final TransactionType type;
-    private final LocalDateTime dateTime;
+    private Stock stock;
+    private int quantity;
+    private double pricePerShare;
+    private TransactionType type;
+    private LocalDateTime dateTime;
 
     public Transaction(Stock stock, int quantity, double pricePerShare, TransactionType type) {
         this(stock, quantity, pricePerShare, type, LocalDateTime.now());

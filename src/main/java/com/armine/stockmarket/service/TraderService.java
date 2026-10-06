@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Random;
 
 public class TraderService {
-    private final List<Trader> traders;
+    private List<Trader> traders;
 
     public TraderService() {
         this.traders = new ArrayList<>();

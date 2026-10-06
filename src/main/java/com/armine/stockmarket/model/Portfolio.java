@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class Portfolio {
 
-    private final Map<Stock, Integer> holdings;
+    private Map<Stock, Integer> holdings;
 
     public Portfolio() {
         holdings = new HashMap<>();

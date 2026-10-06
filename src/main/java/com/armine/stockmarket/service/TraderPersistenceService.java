@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TraderPersistenceService {
-    private final String directoryName;
+    private String directoryName;
 
     public TraderPersistenceService(String directoryName) {
         this.directoryName = directoryName;

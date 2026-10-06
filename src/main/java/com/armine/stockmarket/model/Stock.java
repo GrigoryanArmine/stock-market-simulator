@@ -3,8 +3,8 @@ import java.util.Objects;
 
 public class Stock {
 
-    private final String symbol;
-    private final String companyName;
+    private String symbol;
+    private String companyName;
     private double currentPrice;
 
     public Stock(String symbol, String companyName, double currentPrice) {
