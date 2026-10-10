@@ -13,6 +13,28 @@ public class TraderService {
         this.traders = new ArrayList<>();
     }
 
+    public Trader createTrader(String firstName, String surname, String username) {
+        if (firstName == null || firstName.isBlank() || surname == null || surname.isBlank() || username == null || username.isBlank()) {
+            throw new IllegalArgumentException("Please fill in all fields.");
+        }
+
+        firstName = firstName.trim();
+        surname = surname.trim();
+        username = username.trim();
+
+        if (!username.matches("[a-zA-Z0-9_]+")) {
+            throw new IllegalArgumentException("Username can contain only letters, numbers, and underscores.");
+        }
+
+        if (findTraderByUsername(username) != null) {
+            throw new IllegalArgumentException("Username already exists.");
+        }
+
+        Trader trader = new Trader(generateUniqueId(), username, firstName, surname, 10000);
+        addTrader(trader);
+        return trader;
+    }
+
     public void addTrader(Trader trader) {
         if (trader == null) {
             throw new IllegalArgumentException("Trader cannot be null.");
@@ -29,6 +51,7 @@ public class TraderService {
     public List<Trader> getAllTraders() {
         return new ArrayList<>(traders);
     }
+
     public int generateUniqueId() {
         Random random = new Random();
         int id;

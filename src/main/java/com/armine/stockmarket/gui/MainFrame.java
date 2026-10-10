@@ -8,9 +8,10 @@ import java.awt.Component;
 import javax.swing.Box;
 import javax.swing.JTextField;
 import java.awt.Dimension;
-import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.JScrollPane;
+import java.awt.FlowLayout;
+import java.awt.Color;
 
 
 import com.armine.stockmarket.model.Stock;
@@ -129,6 +130,9 @@ public class MainFrame extends JFrame {
         JLabel titleLabel = new JLabel("TRADER LOGIN");
         JLabel usernameLabel = new JLabel("Username:");
 
+        JLabel errorLabel = new JLabel(" ");
+        errorLabel.setForeground(Color.RED);
+
         JTextField usernameField = new JTextField(15);
         usernameField.setMaximumSize(new Dimension(200, 30));
 
@@ -140,10 +144,11 @@ public class MainFrame extends JFrame {
             String username = usernameField.getText();
             Trader trader = traderService.findTraderByUsername(username);
 
-            if (trader == null)
-                JOptionPane.showMessageDialog(this, "Trader not found.");
-            else
+            if (trader == null) {
+                errorLabel.setText("Trader not found.");
+            } else {
                 showTraderDashboard(trader, false);
+            }
         });
 
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -151,6 +156,7 @@ public class MainFrame extends JFrame {
         usernameField.setAlignmentX(Component.CENTER_ALIGNMENT);
         loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         panel.add(Box.createVerticalStrut(50));
         panel.add(titleLabel);
@@ -159,6 +165,9 @@ public class MainFrame extends JFrame {
         panel.add(usernameLabel);
         panel.add(Box.createVerticalStrut(5));
         panel.add(usernameField);
+
+        panel.add(Box.createVerticalStrut(5));
+        panel.add(errorLabel);
 
         panel.add(Box.createVerticalStrut(20));
         panel.add(loginButton);
@@ -189,6 +198,9 @@ public class MainFrame extends JFrame {
         JLabel usernameLabel = new JLabel("Username:");
         JTextField usernameField = new JTextField(15);
 
+        JLabel errorLabel = new JLabel(" ");
+        errorLabel.setForeground(Color.RED);
+
         JButton createButton = new JButton("Create Account");
         JButton backButton = new JButton("Back");
 
@@ -201,6 +213,7 @@ public class MainFrame extends JFrame {
         usernameField.setAlignmentX(Component.CENTER_ALIGNMENT);
         createButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         firstNameField.setMaximumSize(new Dimension(200, 30));
         surnameField.setMaximumSize(new Dimension(200, 30));
@@ -221,6 +234,9 @@ public class MainFrame extends JFrame {
         panel.add(usernameLabel);
         panel.add(usernameField);
 
+        panel.add(Box.createVerticalStrut(5));
+        panel.add(errorLabel);
+
         panel.add(Box.createVerticalStrut(15));
         panel.add(createButton);
 
@@ -234,29 +250,13 @@ public class MainFrame extends JFrame {
             String surname = surnameField.getText().trim();
             String username = usernameField.getText().trim();
 
-            if (firstName.isEmpty() || surname.isEmpty() || username.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please fill in all fields.");
-                return;
+            try {
+                Trader trader = traderService.createTrader(firstName, surname, username);
+                traderPersistenceService.saveTrader(trader);
+                showTraderDashboard(trader, true);
+            } catch (IllegalArgumentException ex) {
+                errorLabel.setText(ex.getMessage());
             }
-
-            if (!username.matches("[a-zA-Z0-9_]+")) {
-                JOptionPane.showMessageDialog(this, "Username can contain only letters, numbers, and underscores.");
-                return;
-            }
-
-            if (traderService.findTraderByUsername(username) != null) {
-                JOptionPane.showMessageDialog(this, "Username already exists.");
-                return;
-            }
-
-            int id = traderService.generateUniqueId();
-
-            Trader trader = new Trader(id, username, firstName, surname, 10000);
-
-            traderService.addTrader(trader);
-            traderPersistenceService.saveTrader(trader);
-
-            showTraderDashboard(trader, true);
         });
 
         add(panel);
@@ -370,7 +370,6 @@ public class MainFrame extends JFrame {
 
         backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         buyButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         balanceLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -389,6 +388,7 @@ public class MainFrame extends JFrame {
             BuyStockDialog dialog = new BuyStockDialog(this, selectedStock, trader, tradingService, traderPersistenceService, transactionService
             );
             dialog.setVisible(true);
+            showMarket(trader);
         });
 
 
@@ -463,12 +463,48 @@ public class MainFrame extends JFrame {
 
         JButton backButton = new JButton("Back");
         backButton.addActionListener(e -> showTraderDashboard(trader, false));
+        JButton sellButton = new JButton("Sell Stock");
 
+        JLabel errorLabel = new JLabel(" ");
+        errorLabel.setForeground(java.awt.Color.RED);
+
+        sellButton.addActionListener(e -> {
+            int selectedRow = portfolioTable.getSelectedRow();
+
+            if (selectedRow == -1) {
+                errorLabel.setText("Please select a stock first.");
+                return;
+            }
+
+            errorLabel.setText(" ");
+
+            String symbol = (String) portfolioTable.getValueAt(selectedRow, 0);
+
+            Stock selectedStock = null;
+            for (Stock ownedStock : holdings.keySet()) {
+                if (ownedStock.getSymbol().equals(symbol)) {
+                    selectedStock = ownedStock;
+                    break;
+                }
+            }
+
+            if (selectedStock == null) {
+                errorLabel.setText("Stock not found in portfolio.");
+                return;
+            }
+
+            SellStockDialog dialog = new SellStockDialog(this, selectedStock, trader,
+                    tradingService, traderPersistenceService, transactionService);
+            dialog.setVisible(true);
+            showPortfolio(trader);
+        });
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         balanceLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         portfolioValueLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         totalValueLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        sellButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         panel.add(Box.createVerticalStrut(20));
         panel.add(titleLabel);
@@ -485,8 +521,21 @@ public class MainFrame extends JFrame {
         panel.add(Box.createVerticalStrut(10));
         panel.add(totalValueLabel);
 
-        panel.add(Box.createVerticalStrut(20));
-        panel.add(backButton);
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
+
+        sellButton.setPreferredSize(new Dimension(130, 35));
+        backButton.setPreferredSize(new Dimension(100, 35));
+
+        buttonPanel.add(sellButton);
+        buttonPanel.add(backButton);
+
+        errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(errorLabel);
+        panel.add(Box.createVerticalStrut(5));
+        panel.add(buttonPanel);
+        panel.add(Box.createVerticalStrut(15));
 
         add(panel);
 
