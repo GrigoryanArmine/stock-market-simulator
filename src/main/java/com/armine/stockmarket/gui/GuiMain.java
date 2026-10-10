@@ -31,7 +31,7 @@ public class GuiMain {
             traderService.addTrader(trader);
         }
 
-        MainFrame mainFrame = new MainFrame(traderService, marketService, tradingService);
+        MainFrame mainFrame = new MainFrame(traderService, marketService, tradingService, traderPersistenceService, transactionService);
         mainFrame.setVisible(true);
     }
 }
