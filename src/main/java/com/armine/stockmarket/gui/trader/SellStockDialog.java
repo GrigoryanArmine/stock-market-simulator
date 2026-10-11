@@ -1,4 +1,4 @@
-package com.armine.stockmarket.gui;
+package com.armine.stockmarket.gui.trader;
 
 import com.armine.stockmarket.exception.InsufficientSharesException;
 import com.armine.stockmarket.model.Stock;
