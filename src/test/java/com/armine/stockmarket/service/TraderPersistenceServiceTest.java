@@ -2,266 +2,132 @@ package com.armine.stockmarket.service;
 
 import com.armine.stockmarket.model.Stock;
 import com.armine.stockmarket.model.Trader;
-import org.junit.jupiter.api.Test;
 
-import java.io.File;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class TraderPersistenceServiceTest {
+    @TempDir
+    Path tempDir;
 
     @Test
     void shouldSaveAndLoadTrader() {
+        TraderPersistenceService persistenceService = new TraderPersistenceService(tempDir.toString());
 
-        String testDirectory = "test-traders";
-
-        TraderPersistenceService persistenceService =
-                new TraderPersistenceService(testDirectory);
-
-        MarketService marketService =
-                new MarketService();
-
+        MarketService marketService = new MarketService();
         marketService.initializeMarket();
 
-        Trader trader =
-                new Trader(
-                        123456,
-                        "armine",
-                        "Armine",
-                        "Grigoryan",
-                        10000
-                );
+        Trader trader = new Trader(
+                123456,
+                "armine",
+                "Armine",
+                "Grigoryan",
+                10000
+        );
 
-        Stock apple =
-                marketService.findStock("AAPL");
-
-        trader.getPortfolio()
-                .addStock(apple, 3);
+        Stock apple = marketService.findStock("AAPL");
+        trader.getPortfolio().addStock(apple, 3);
 
         persistenceService.saveTrader(trader);
 
-        Trader loadedTrader =
-                persistenceService.loadTrader(
-                        "armine",
-                        marketService
-                );
+        Trader loadedTrader = persistenceService.loadTrader("armine", marketService);
 
         assertNotNull(loadedTrader);
-
-        assertEquals(
-                123456,
-                loadedTrader.getId()
-        );
-
-        assertEquals(
-                "armine",
-                loadedTrader.getUsername()
-        );
-
-        assertEquals(
-                "Armine",
-                loadedTrader.getFirstName()
-        );
-
-        assertEquals(
-                "Grigoryan",
-                loadedTrader.getSurname()
-        );
-
-        assertEquals(
-                10000,
-                loadedTrader.getBalance()
-        );
-
-        assertEquals(
-                3,
-                loadedTrader.getPortfolio()
-                        .getQuantity(apple)
-        );
-
-        deleteDirectory(testDirectory);
+        assertEquals(123456, loadedTrader.getId());
+        assertEquals("armine", loadedTrader.getUsername());
+        assertEquals("Armine", loadedTrader.getFirstName());
+        assertEquals("Grigoryan", loadedTrader.getSurname());
+        assertEquals(10000, loadedTrader.getBalance(), 0.001);
+        assertEquals(3, loadedTrader.getPortfolio().getQuantity(apple));
     }
 
     @Test
     void shouldKeepDifferentTradersSeparate() {
 
-        String testDirectory = "test-traders";
+        TraderPersistenceService persistenceService = new TraderPersistenceService(tempDir.toString());
 
-        TraderPersistenceService persistenceService =
-                new TraderPersistenceService(testDirectory);
-
-        MarketService marketService =
-                new MarketService();
-
+        MarketService marketService = new MarketService();
         marketService.initializeMarket();
 
-        Trader armine =
-                new Trader(
-                        123456,
-                        "armine",
-                        "Armine",
-                        "Grigoryan",
-                        10000
-                );
+        Trader armine = new Trader(123456, "armine", "Armine", "Grigoryan", 10000);
+        Trader anna = new Trader(654321, "anna", "Anna", "Smith", 5000);
 
-        Trader anna =
-                new Trader(
-                        654321,
-                        "anna",
-                        "Anna",
-                        "Smith",
-                        5000
-                );
+        Stock apple = marketService.findStock("AAPL");
+        Stock tesla = marketService.findStock("TSLA");
 
-        Stock apple =
-                marketService.findStock("AAPL");
-
-        Stock tesla =
-                marketService.findStock("TSLA");
-
-        armine.getPortfolio()
-                .addStock(apple, 2);
-
-        anna.getPortfolio()
-                .addStock(tesla, 4);
+        armine.getPortfolio().addStock(apple, 2);
+        anna.getPortfolio().addStock(tesla, 4);
 
         persistenceService.saveTrader(armine);
         persistenceService.saveTrader(anna);
 
-        Trader loadedArmine =
-                persistenceService.loadTrader(
-                        "armine",
-                        marketService
-                );
-
-        Trader loadedAnna =
-                persistenceService.loadTrader(
-                        "anna",
-                        marketService
-                );
+        Trader loadedArmine = persistenceService.loadTrader("armine", marketService);
+        Trader loadedAnna = persistenceService.loadTrader("anna", marketService);
 
         assertNotNull(loadedArmine);
         assertNotNull(loadedAnna);
 
-        assertEquals(
-                2,
-                loadedArmine.getPortfolio()
-                        .getQuantity(apple)
-        );
+        assertEquals(2, loadedArmine.getPortfolio().getQuantity(apple));
+        assertEquals(0, loadedArmine.getPortfolio().getQuantity(tesla));
 
-        assertEquals(
-                0,
-                loadedArmine.getPortfolio()
-                        .getQuantity(tesla)
-        );
-
-        assertEquals(
-                4,
-                loadedAnna.getPortfolio()
-                        .getQuantity(tesla)
-        );
-
-        assertEquals(
-                0,
-                loadedAnna.getPortfolio()
-                        .getQuantity(apple)
-        );
-
-        deleteDirectory(testDirectory);
+        assertEquals(4, loadedAnna.getPortfolio().getQuantity(tesla));
+        assertEquals(0, loadedAnna.getPortfolio().getQuantity(apple));
     }
 
     @Test
     void shouldLoadAllTraders() {
+        TraderPersistenceService persistenceService = new TraderPersistenceService(tempDir.toString());
 
-        String testDirectory = "test-traders-all";
-
-        TraderPersistenceService persistenceService =
-                new TraderPersistenceService(testDirectory);
-
-        MarketService marketService =
-                new MarketService();
-
+        MarketService marketService = new MarketService();
         marketService.initializeMarket();
 
-        Trader armine =
-                new Trader(
-                        123456,
-                        "armine",
-                        "Armine",
-                        "Grigoryan",
-                        10000
-                );
+        Trader armine = new Trader(123456, "armine", "Armine", "Grigoryan", 10000);
 
-        Trader anna =
-                new Trader(
-                        234567,
-                        "anna",
-                        "Anna",
-                        "Smith",
-                        8000
-                );
+        Trader anna = new Trader(234567, "anna", "Anna", "Smith", 8000);
 
-        Trader david =
-                new Trader(
-                        345678,
-                        "david",
-                        "David",
-                        "Brown",
-                        12000
-                );
+        Trader david = new Trader(345678, "david", "David", "Brown", 12000);
 
         persistenceService.saveTrader(armine);
         persistenceService.saveTrader(anna);
         persistenceService.saveTrader(david);
 
-        List<Trader> traders =
-                persistenceService.loadAllTraders(
-                        marketService
-                );
+        List<Trader> traders = persistenceService.loadAllTraders(marketService);
 
         assertEquals(3, traders.size());
 
-        boolean armineFound = false;
-        boolean annaFound = false;
-        boolean davidFound = false;
+        assertTrue(traders.stream().anyMatch(t -> t.getUsername().equals("armine")));
 
-        for (Trader trader : traders) {
+        assertTrue(traders.stream().anyMatch(t -> t.getUsername().equals("anna")));
 
-            if (trader.getUsername().equals("armine")) {
-                armineFound = true;
-            }
-
-            if (trader.getUsername().equals("anna")) {
-                annaFound = true;
-            }
-
-            if (trader.getUsername().equals("david")) {
-                davidFound = true;
-            }
-        }
-
-        assertTrue(armineFound);
-        assertTrue(annaFound);
-        assertTrue(davidFound);
-
-        deleteDirectory(testDirectory);
+        assertTrue(traders.stream().anyMatch(t -> t.getUsername().equals("david")));
     }
 
-    private void deleteDirectory(String directoryName) {
+    @Test
+    void shouldRejectMissingStockDuringLoading() {
+        TraderPersistenceService persistenceService = new TraderPersistenceService(tempDir.toString());
 
-        File directory =
-                new File(directoryName);
+        MarketService originalMarket = new MarketService();
 
-        File[] files =
-                directory.listFiles();
+        Stock stock = new Stock("TEST", "Test Company", 100.00);
 
-        if (files != null) {
-            for (File file : files) {
-                file.delete();
-            }
-        }
+        originalMarket.addStock(stock);
 
-        directory.delete();
+        Trader trader = new Trader(123456, "testuser", "Test", "User", 1000);
+
+        trader.getPortfolio().addStock(stock, 2);
+
+        persistenceService.saveTrader(trader);
+
+        MarketService emptyMarket = new MarketService();
+
+        assertThrows(IllegalStateException.class, () -> persistenceService.loadTrader("testuser", emptyMarket)
+        );
+
+        assertNull(emptyMarket.findStock("TEST"));
     }
 }

@@ -5,24 +5,19 @@ import java.util.List;
 
 public class Trader extends User {
     private int id;
-    private String username;
     private double balance;
     private Portfolio portfolio;
     private List<Transaction> transactions;
 
     public Trader(int id, String username, String firstName, String surname, double balance) {
-        super(firstName, surname);
+        super(firstName, surname, username);
         if (id <= 0) {
             throw new IllegalArgumentException("Trader ID must be greater than zero.");
-        }
-        if (username == null || username.isBlank()) {
-            throw new IllegalArgumentException("Username cannot be empty.");
         }
         if (balance < 0) {
             throw new IllegalArgumentException("Balance cannot be negative.");
         }
         this.id = id;
-        this.username = username;
         this.balance = balance;
         this.portfolio = new Portfolio();
         this.transactions = new ArrayList<>();
@@ -30,10 +25,6 @@ public class Trader extends User {
 
     public int getId() {
         return id;
-    }
-
-    public String getUsername() {
-        return username;
     }
 
     public double getBalance() {
@@ -52,6 +43,7 @@ public class Trader extends User {
         if (amount <= 0) {
             throw new IllegalArgumentException("Amount must be greater than zero.");
         }
+
         balance += amount;
     }
 
@@ -77,7 +69,7 @@ public class Trader extends User {
     @Override
     public String toString() {
         return "ID: " + id
-                + " | Username: " + username
+                + " | Username: " + getUsername()
                 + " | Name: " + getFullName()
                 + " | Balance: $" + balance;
     }

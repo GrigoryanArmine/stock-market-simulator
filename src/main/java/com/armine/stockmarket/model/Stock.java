@@ -15,10 +15,7 @@ public class Stock {
         if (companyName == null || companyName.isBlank()) {
             throw new IllegalArgumentException("Company name cannot be empty.");
         }
-
-        if (currentPrice <= 0) {
-            throw new IllegalArgumentException("Stock price must be greater than zero.");
-        }
+        validatePrice(currentPrice);
 
         this.symbol = symbol.toUpperCase();
         this.companyName = companyName;
@@ -38,10 +35,7 @@ public class Stock {
     }
 
     public void updatePrice(double newPrice) {
-        if (newPrice <= 0) {
-            throw new IllegalArgumentException("Stock price must be greater than zero.");
-        }
-
+        validatePrice(newPrice);
         this.currentPrice = newPrice;
     }
 
@@ -57,7 +51,15 @@ public class Stock {
 
         return symbol.equals(stock.symbol);
     }
+    public static void validatePrice(double price) {
+        if (!Double.isFinite(price)) {
+            throw new IllegalArgumentException("Please enter a valid numeric price.");
+        }
 
+        if (price <= 0) {
+            throw new IllegalArgumentException("Stock price must be greater than zero.");
+        }
+    }
     @Override
     public int hashCode() {
         return Objects.hash(symbol);

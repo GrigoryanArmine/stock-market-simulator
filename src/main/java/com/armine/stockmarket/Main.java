@@ -12,7 +12,6 @@ import com.armine.stockmarket.ui.MainMenuUI;
 import java.util.List;
 
 public class Main {
-
     public static void main(String[] args) {
 
         // Create the market
@@ -28,7 +27,14 @@ public class Main {
         TransactionService transactionService = new TransactionService("transactions");
 
         // Create the admin
-        Admin admin = new Admin("System", "Administrator");
+        String adminUsername = System.getenv("STOCK_ADMIN_USERNAME");
+        String adminPasswordHash = System.getenv("STOCK_ADMIN_PASSWORD_HASH");
+
+        if (adminUsername == null || adminUsername.isBlank() || adminPasswordHash == null || adminPasswordHash.isBlank()) {
+            throw new IllegalStateException("Admin credentials are not configured.");
+        }
+
+        Admin admin = new Admin("System", "Administrator", adminUsername, adminPasswordHash);
 
         // Load all previously saved traders
         List<Trader> savedTraders = traderPersistenceService.loadAllTraders(marketService);

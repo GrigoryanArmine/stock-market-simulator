@@ -22,8 +22,8 @@ public class TraderPersistenceService {
             throw new IllegalArgumentException("Trader cannot be null.");
         }
         File directory = new File(directoryName);
-        if (!directory.exists()) {
-            directory.mkdirs();
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IllegalStateException("Could not create trader directory.");
         }
         File file = new File(directory, trader.getUsername() + ".txt");
         try (FileWriter writer = new FileWriter(file)) {
@@ -35,19 +35,10 @@ public class TraderPersistenceService {
 
             for (Stock stock : trader.getPortfolio().getHoldings().keySet()) {
                 int quantity = trader.getPortfolio().getQuantity(stock);
-                writer.write(
-                        stock.getSymbol()
-                                + ","
-                                + stock.getCompanyName()
-                                + ","
-                                + stock.getCurrentPrice()
-                                + ","
-                                + quantity
-                                + "\n"
-                );
+                writer.write(stock.getSymbol() + "," + stock.getCompanyName() + "," + stock.getCurrentPrice() + "," + quantity + "\n");
             }
         } catch (IOException e) {
-            System.out.println("Could not save trader: " + e.getMessage());
+            throw new IllegalStateException("Could not save trader " + trader.getUsername() + ": " + e.getMessage(), e);
         }
     }
 
@@ -56,16 +47,17 @@ public class TraderPersistenceService {
             return null;
         }
         File file = new File(directoryName, username + ".txt");
+
         if (!file.exists()) {
             return null;
         }
+
         try (Scanner fileScanner = new Scanner(file)) {
             int id = Integer.parseInt(fileScanner.nextLine());
             String savedUsername = fileScanner.nextLine();
             String firstName = fileScanner.nextLine();
             String surname = fileScanner.nextLine();
             double balance = Double.parseDouble(fileScanner.nextLine());
-
             Trader trader = new Trader(id, savedUsername, firstName, surname, balance);
 
             while (fileScanner.hasNextLine()) {
@@ -73,45 +65,47 @@ public class TraderPersistenceService {
                 if (line.isBlank()) {
                     continue;
                 }
-                String[] parts = line.split(",");
+                String[] parts = line.split(",", -1);
                 if (parts.length != 4) {
-                    continue;
+                    throw new IllegalStateException("Invalid portfolio record for " + savedUsername + ": " + line);
                 }
-                String symbol = parts[0];
-                String companyName = parts[1];
-                double price = Double.parseDouble(parts[2]);
-                int quantity = Integer.parseInt(parts[3]);
+
+                String symbol = parts[0].trim();
+                int quantity = Integer.parseInt(parts[3].trim());
 
                 Stock stock = marketService.findStock(symbol);
-
                 if (stock == null) {
-                    stock = new Stock(symbol, companyName, price);
-                    marketService.addStock(stock);
+                    throw new IllegalStateException("Trader " + savedUsername + " owns stock " + symbol + ", but this stock is missing from the market.");
                 }
                 trader.getPortfolio().addStock(stock, quantity);
             }
             return trader;
         } catch (IOException | RuntimeException e) {
-            System.out.println("Could not load trader: " + e.getMessage());
-            return null;
+            throw new IllegalStateException("Could not load trader file " + file.getName() + ": " + e.getMessage(), e
+            );
         }
     }
 
     public List<Trader> loadAllTraders(MarketService marketService) {
         List<Trader> traders = new ArrayList<>();
         File directory = new File(directoryName);
-        if (!directory.exists() || !directory.isDirectory()) {
+
+        if (!directory.exists()) {
             return traders;
         }
-        File[] files = directory.listFiles((dir, name) -> name.endsWith(".txt"));
+        if (!directory.isDirectory()) {
+            throw new IllegalStateException("Trader storage path is not a directory.");
+        }
+
+        File[] files = directory.listFiles((dir, name) -> name.endsWith(".txt")
+        );
+
         if (files == null) {
-            return traders;
+            throw new IllegalStateException("Could not read trader directory.");
         }
         for (File file : files) {
             String fileName = file.getName();
-
             String username = fileName.substring(0, fileName.length() - 4);
-
             Trader trader = loadTrader(username, marketService);
             if (trader != null) {
                 traders.add(trader);

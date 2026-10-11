@@ -1,17 +1,11 @@
 package com.armine.stockmarket.gui;
-import javax.swing.*;
-import java.awt.Component;
-import java.awt.Dimension;
 
+import javax.swing.*;
 
 import com.armine.stockmarket.gui.trader.*;
-import com.armine.stockmarket.service.TraderService;
+import com.armine.stockmarket.gui.admin.*;
+import com.armine.stockmarket.service.*;
 import com.armine.stockmarket.model.Trader;
-import com.armine.stockmarket.service.MarketService;
-import com.armine.stockmarket.service.TradingService;
-import com.armine.stockmarket.service.TraderPersistenceService;
-import com.armine.stockmarket.service.TransactionService;
-
 
 public class MainFrame extends JFrame {
     private TraderService traderService;
@@ -19,13 +13,21 @@ public class MainFrame extends JFrame {
     private TradingService tradingService;
     private TraderPersistenceService traderPersistenceService;
     private TransactionService transactionService;
+    private AdminService adminService;
 
-    public MainFrame(TraderService traderService, MarketService marketService, TradingService tradingService, TraderPersistenceService traderPersistenceService, TransactionService transactionService) {
+    public MainFrame(
+            TraderService traderService,
+            MarketService marketService,
+            TradingService tradingService,
+            TraderPersistenceService traderPersistenceService,
+            TransactionService transactionService,
+            AdminService adminService) {
         this.traderService = traderService;
         this.marketService = marketService;
         this.tradingService = tradingService;
         this.traderPersistenceService = traderPersistenceService;
         this.transactionService = transactionService;
+        this.adminService = adminService;
 
         setTitle("Stock Market Simulator");
         setSize(900, 600);
@@ -40,7 +42,7 @@ public class MainFrame extends JFrame {
 
         MainMenuPanel mainMenuPanel = new MainMenuPanel(
                 () -> showTraderMenu(),
-                () -> JOptionPane.showMessageDialog(this, "Admin functionality is coming soon."),
+                () -> showAdminLogin(),
                 () -> System.exit(0)
         );
 
@@ -161,4 +163,50 @@ public class MainFrame extends JFrame {
     }
 
 
+    private void showAdminLogin() {
+        getContentPane().removeAll();
+
+        AdminLoginPanel loginPanel = new AdminLoginPanel(adminService, admin -> showAdminDashboard(), () -> showMainMenu());
+        add(loginPanel);
+
+        revalidate();
+        repaint();
+    }
+
+
+
+    private void showAdminDashboard() {
+        getContentPane().removeAll();
+
+        AdminDashboardPanel dashboardPanel = new AdminDashboardPanel(
+                () -> showManageStocks(),
+                () -> showManageTraders(),
+                () -> showMainMenu()
+        );
+        add(dashboardPanel);
+        revalidate();
+        repaint();
+    }
+
+    private void showManageStocks() {
+        getContentPane().removeAll();
+        ManageStocksPanel manageStocksPanel = new ManageStocksPanel(marketService, traderService, ()->showAdminDashboard());
+        add(manageStocksPanel);
+        revalidate();
+        repaint();
+    }
+
+    private void showManageTraders() {
+        getContentPane().removeAll();
+
+        ManageTradersPanel manageTradersPanel = new ManageTradersPanel(
+                traderService,
+                ()-> showAdminDashboard()
+        );
+
+        add(manageTradersPanel);
+
+        revalidate();
+        repaint();
+    }
 }

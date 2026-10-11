@@ -157,7 +157,7 @@ public class AdminUI {
             return;
         }
         try {
-            marketService.removeStock(symbol);
+            marketService.removeStock(symbol, traderService);
             System.out.println("Stock removed successfully.");
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());

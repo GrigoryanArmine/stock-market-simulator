@@ -4,199 +4,78 @@ import com.armine.stockmarket.exception.InsufficientFundsException;
 import com.armine.stockmarket.exception.InsufficientSharesException;
 import com.armine.stockmarket.model.Stock;
 import com.armine.stockmarket.model.Trader;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TradingServiceTest {
+class TradingServiceTest {
+    private TradingService tradingService;
+    private Trader trader;
+    private Stock stock;
 
-    @Test
-    public void testBuyStock() throws InsufficientFundsException {
+    @BeforeEach
+    void setUp() {
+        tradingService = new TradingService();
 
-        Trader trader = new Trader(
-                123456,
-                "armine",
-                "Armine",
-                "Grigoryan",
-                10000
+        trader = new Trader(1, "test_trader", "Test", "Trader", 1000.00
         );
-
-        Stock stock = new Stock(
-                "AAPL",
-                "Apple",
-                220.50
-        );
-
-        TradingService tradingService =
-                new TradingService();
-
-        tradingService.buyStock(
-                trader,
-                stock,
-                2
-        );
-
-        assertEquals(
-                9559.0,
-                trader.getBalance()
-        );
-
-        assertEquals(
-                2,
-                trader.getPortfolio().getQuantity(stock)
-        );
-
-        assertEquals(
-                1,
-                trader.getTransactions().size()
-        );
+        stock = new Stock("AAPL", "Apple", 100.00);
     }
 
     @Test
-    public void testSellStock()
-            throws InsufficientFundsException,
-            InsufficientSharesException {
+    void shouldBuyStockSuccessfully() throws InsufficientFundsException {
+        tradingService.buyStock(trader, stock, 3);
 
-        Trader trader = new Trader(
-                123456,
-                "armine",
-                "Armine",
-                "Grigoryan",
-                10000
-        );
-
-        Stock stock = new Stock(
-                "AAPL",
-                "Apple",
-                220.50
-        );
-
-        TradingService tradingService =
-                new TradingService();
-
-        tradingService.buyStock(
-                trader,
-                stock,
-                3
-        );
-
-        tradingService.sellStock(
-                trader,
-                stock,
-                1
-        );
-
-        assertEquals(
-                9559.0,
-                trader.getBalance()
-        );
-
-        assertEquals(
-                2,
-                trader.getPortfolio().getQuantity(stock)
-        );
-
-        assertEquals(
-                2,
-                trader.getTransactions().size()
-        );
+        assertEquals(700.00, trader.getBalance(), 0.001);
+        assertEquals(3, trader.getPortfolio().getQuantity(stock));
+        assertEquals(1, trader.getTransactions().size());
     }
 
     @Test
-    public void testCannotBuyWithoutEnoughMoney() {
+    void shouldRejectBuyWhenInsufficientFunds() {
+        assertThrows(InsufficientFundsException.class, () -> tradingService.buyStock(trader, stock, 11));
 
-        Trader trader = new Trader(
-                123456,
-                "armine",
-                "Armine",
-                "Grigoryan",
-                100
-        );
-
-        Stock stock = new Stock(
-                "AAPL",
-                "Apple",
-                220.50
-        );
-
-        TradingService tradingService =
-                new TradingService();
-
-        assertThrows(
-                InsufficientFundsException.class,
-                () -> tradingService.buyStock(
-                        trader,
-                        stock,
-                        1
-                )
-        );
+        assertEquals(1000.00, trader.getBalance(), 0.001);
+        assertEquals(0, trader.getPortfolio().getQuantity(stock));
+        assertTrue(trader.getTransactions().isEmpty());
     }
 
     @Test
-    public void testCannotSellMoreSharesThanOwned()
-            throws InsufficientFundsException {
+    void shouldSellStockSuccessfully() throws InsufficientSharesException {
+        trader.getPortfolio().addStock(stock, 5);
 
-        Trader trader = new Trader(
-                123456,
-                "armine",
-                "Armine",
-                "Grigoryan",
-                10000
-        );
+        tradingService.sellStock(trader, stock, 2);
 
-        Stock stock = new Stock(
-                "AAPL",
-                "Apple",
-                220.50
-        );
-
-        TradingService tradingService =
-                new TradingService();
-
-        tradingService.buyStock(
-                trader,
-                stock,
-                2
-        );
-
-        assertThrows(
-                InsufficientSharesException.class,
-                () -> tradingService.sellStock(
-                        trader,
-                        stock,
-                        5
-                )
-        );
+        assertEquals(1200.00, trader.getBalance(), 0.001);
+        assertEquals(3, trader.getPortfolio().getQuantity(stock));
+        assertEquals(1, trader.getTransactions().size());
     }
 
     @Test
-    public void testCannotBuyNegativeQuantity()
-            throws InsufficientFundsException {
+    void shouldRejectSellWhenInsufficientShares() {
+        trader.getPortfolio().addStock(stock, 2);
 
-        Trader trader = new Trader(
-                123456,
-                "armine",
-                "Armine",
-                "Grigoryan",
-                10000
-        );
+        assertThrows(InsufficientSharesException.class, () -> tradingService.sellStock(trader, stock, 5));
 
-        Stock stock = new Stock(
-                "AAPL",
-                "Apple",
-                220.50
-        );
+        assertEquals(1000.00, trader.getBalance(), 0.001);
+        assertEquals(2, trader.getPortfolio().getQuantity(stock));
+        assertTrue(trader.getTransactions().isEmpty());
+    }
 
-        TradingService tradingService =
-                new TradingService();
+    @Test
+    void shouldRejectZeroOrNegativeQuantity() {
+        assertThrows(IllegalArgumentException.class, () -> tradingService.buyStock(trader, stock, 0));
+        assertThrows(IllegalArgumentException.class, () -> tradingService.sellStock(trader, stock, -1));
+    }
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> tradingService.buyStock(
-                        trader,
-                        stock,
-                        -1
-                )
-        );
+    @Test
+    void shouldAllowBuyingWithExactBalance() throws InsufficientFundsException {
+
+        tradingService.buyStock(trader, stock, 10);
+
+        assertEquals(0.00, trader.getBalance(), 0.001);
+        assertEquals(10, trader.getPortfolio().getQuantity(stock));
     }
 }
