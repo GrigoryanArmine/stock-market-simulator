@@ -8,9 +8,9 @@ import com.armine.stockmarket.service.TraderPersistenceService;
 import com.armine.stockmarket.service.TransactionService;
 
 import javax.swing.*;
-import java.awt.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import java.awt.*;
 import java.util.Locale;
 
 public class BuyStockDialog extends JDialog {
@@ -24,6 +24,7 @@ public class BuyStockDialog extends JDialog {
     private JLabel totalLabel;
     private JLabel balanceLabel;
     private JLabel successLabel;
+    private JButton buyButton;
 
     public BuyStockDialog(JFrame parent, Stock stock, Trader trader, TradingService tradingService, TraderPersistenceService traderPersistenceService, TransactionService transactionService) {
         super(parent, "Buy Stock", true);
@@ -46,6 +47,7 @@ public class BuyStockDialog extends JDialog {
 
         quantityField = new JTextField(10);
         quantityField.setMaximumSize(new Dimension(200, 30));
+
         errorLabel = new JLabel(" ");
         errorLabel.setForeground(Color.RED);
         totalLabel = new JLabel("Total cost: $0.00");
@@ -53,7 +55,9 @@ public class BuyStockDialog extends JDialog {
         successLabel = new JLabel(" ");
         successLabel.setForeground(new Color(0, 128, 0));
 
-        JButton buyButton = new JButton("Buy Stock");
+        buyButton = new JButton("Buy Stock");
+        buyButton.setEnabled(false);
+
         JButton cancelButton = new JButton("Cancel");
 
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -69,20 +73,27 @@ public class BuyStockDialog extends JDialog {
 
         panel.add(Box.createVerticalStrut(20));
         panel.add(titleLabel);
+
         panel.add(Box.createVerticalStrut(10));
         panel.add(priceLabel);
+
         panel.add(Box.createVerticalStrut(20));
         panel.add(quantityLabel);
         panel.add(quantityField);
         panel.add(errorLabel);
+
         panel.add(Box.createVerticalStrut(10));
         panel.add(balanceLabel);
+
         panel.add(Box.createVerticalStrut(10));
         panel.add(totalLabel);
+
         panel.add(Box.createVerticalStrut(10));
         panel.add(successLabel);
+
         panel.add(Box.createVerticalStrut(15));
         panel.add(buyButton);
+
         panel.add(Box.createVerticalStrut(10));
         panel.add(cancelButton);
 
@@ -96,37 +107,48 @@ public class BuyStockDialog extends JDialog {
                 errorLabel.setText("Please enter a valid whole number.");
                 return;
             }
-
             try {
                 tradingService.buyStock(trader, stock, quantity);
                 traderPersistenceService.saveTrader(trader);
                 transactionService.saveTransactions(trader);
-
                 errorLabel.setText(" ");
                 successLabel.setText("Successfully purchased " + quantity + " shares of " + stock.getSymbol() + "!");
+
                 balanceLabel.setText("Available balance: $" + String.format(Locale.US, "%.2f", trader.getBalance()));
+
                 buyButton.setVisible(false);
                 quantityField.setEditable(false);
                 cancelButton.setText("Close");
             } catch (InsufficientFundsException | IllegalArgumentException ex) {
                 errorLabel.setText(ex.getMessage());
+                buyButton.setEnabled(false);
             }
         });
-
-        quantityField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) { updateTotal(); }
-            @Override
-            public void removeUpdate(DocumentEvent e) { updateTotal(); }
-            @Override
-            public void changedUpdate(DocumentEvent e) { updateTotal(); }
-        });
+        quantityField.getDocument().addDocumentListener(
+                new DocumentListener() {
+                    @Override
+                    public void insertUpdate(DocumentEvent e) {
+                        updateTotal();
+                    }
+                    @Override
+                    public void removeUpdate(DocumentEvent e) {
+                        updateTotal();
+                    }
+                    @Override
+                    public void changedUpdate(DocumentEvent e) {
+                        updateTotal();
+                    }
+                }
+        );
 
         add(panel);
     }
 
     private void updateTotal() {
         String input = quantityField.getText().trim();
+
+        buyButton.setEnabled(false);
+
         if (input.isEmpty()) {
             errorLabel.setText(" ");
             totalLabel.setText("Total cost: $0.00");
@@ -137,7 +159,10 @@ public class BuyStockDialog extends JDialog {
             tradingService.validateBuy(trader, stock, quantity);
             double total = quantity * stock.getCurrentPrice();
             totalLabel.setText("Total cost: $" + String.format(Locale.US, "%.2f", total));
+
             errorLabel.setText(" ");
+            buyButton.setEnabled(true);
+
         } catch (NumberFormatException ex) {
             errorLabel.setText("Please enter a valid whole number.");
             totalLabel.setText("Total cost: $0.00");

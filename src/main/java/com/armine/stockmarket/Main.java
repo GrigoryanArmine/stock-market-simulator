@@ -2,58 +2,59 @@ package com.armine.stockmarket;
 
 import com.armine.stockmarket.model.Admin;
 import com.armine.stockmarket.model.Trader;
-import com.armine.stockmarket.service.MarketService;
-import com.armine.stockmarket.service.TraderPersistenceService;
-import com.armine.stockmarket.service.TraderService;
-import com.armine.stockmarket.service.TradingService;
-import com.armine.stockmarket.service.TransactionService;
+import com.armine.stockmarket.service.*;
 import com.armine.stockmarket.ui.MainMenuUI;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
 
-        // Create the market
-        MarketService marketService = new MarketService();
-        marketService.initializeMarket();
+        // Initialize market
+        MarketPersistenceService marketPersistenceService = new MarketPersistenceService("market.txt");
+        MarketService marketService = new MarketService(marketPersistenceService);
+        marketPersistenceService.loadMarket(marketService);
 
-        // Create persistence service
-        TraderPersistenceService traderPersistenceService = new TraderPersistenceService("traders");
-
-        // Create services
+        // Initialize trader services
         TraderService traderService = new TraderService();
         TradingService tradingService = new TradingService();
+        TraderPersistenceService traderPersistenceService = new TraderPersistenceService("traders");
         TransactionService transactionService = new TransactionService("transactions");
 
-        // Create the admin
-        String adminUsername = System.getenv("STOCK_ADMIN_USERNAME");
-        String adminPasswordHash = System.getenv("STOCK_ADMIN_PASSWORD_HASH");
-
-        if (adminUsername == null || adminUsername.isBlank() || adminPasswordHash == null || adminPasswordHash.isBlank()) {
-            throw new IllegalStateException("Admin credentials are not configured.");
-        }
-
-        Admin admin = new Admin("System", "Administrator", adminUsername, adminPasswordHash);
-
-        // Load all previously saved traders
+        // Load saved traders
         List<Trader> savedTraders = traderPersistenceService.loadAllTraders(marketService);
 
-        // Add loaded traders to TraderService
         for (Trader trader : savedTraders) {
             transactionService.loadTransactions(trader, marketService);
             traderService.addTrader(trader);
         }
 
-        // Create and start the main menu
+        // Initialize demo Admin account
+        PasswordService passwordService = new PasswordService();
+        char[] demoPassword = "DemoAdmin123!".toCharArray();
+        String adminPasswordHash;
+
+        try {
+            adminPasswordHash = passwordService.hashPassword(demoPassword);
+        } finally {
+            Arrays.fill(demoPassword, '\0');
+        }
+        Admin admin = new Admin("System", "Administrator", "demo_admin", adminPasswordHash);
+
+        AdminService adminService = new AdminService(admin, passwordService);
+
+        // Start console application
         MainMenuUI mainMenuUI = new MainMenuUI(
                 traderService,
+                adminService,
                 traderPersistenceService,
                 marketService,
                 tradingService,
                 transactionService,
                 admin
         );
+
         mainMenuUI.start();
     }
 }

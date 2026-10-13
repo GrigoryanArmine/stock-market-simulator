@@ -8,12 +8,14 @@ import java.util.Random;
 
 public class TraderService {
     private List<Trader> traders;
+    private PasswordService passwordService;
 
     public TraderService() {
         this.traders = new ArrayList<>();
+        this.passwordService = new PasswordService();
     }
 
-    public Trader createTrader(String firstName, String surname, String username) {
+    public Trader createTrader(String firstName, String surname, String username, char[] password) {
         if (firstName == null || firstName.isBlank() || surname == null || surname.isBlank() || username == null || username.isBlank()) {
             throw new IllegalArgumentException("Please fill in all fields.");
         }
@@ -22,19 +24,38 @@ public class TraderService {
         surname = surname.trim();
         username = username.trim();
 
-        if (!username.matches("[a-zA-Z0-9_]+")) {
+        if (!username.matches("[a-zA-Z0-9_]+"))
             throw new IllegalArgumentException("Username can contain only letters, numbers, and underscores.");
-        }
-
-        if (findTraderByUsername(username) != null) {
+        if (findTraderByUsername(username) != null)
             throw new IllegalArgumentException("Username already exists.");
-        }
+        if (password == null || password.length == 0)
+            throw new IllegalArgumentException("Please enter a password.");
+        if (password.length < 8)
+            throw new IllegalArgumentException("Password must contain at least 8 characters.");
 
-        Trader trader = new Trader(generateUniqueId(), username, firstName, surname, 10000);
+        String passwordHash = passwordService.hashPassword(password);
+        Trader trader = new Trader(generateUniqueId(), username, firstName, surname, 10000, passwordHash);
         addTrader(trader);
         return trader;
     }
 
+    public Trader login(String username, char[] password) {
+        if (username == null || username.isBlank()
+                || password == null || password.length == 0) {
+            throw new IllegalArgumentException(
+                    "Please enter your username and password.");
+        }
+
+        Trader trader = findTraderByUsername(username.trim());
+
+        if (trader == null || !passwordService.verifyPassword(
+                password, trader.getPasswordHash())) {
+            throw new IllegalArgumentException(
+                    "Incorrect username or password.");
+        }
+
+        return trader;
+    }
     public void addTrader(Trader trader) {
         if (trader == null) {
             throw new IllegalArgumentException("Trader cannot be null.");

@@ -32,6 +32,7 @@ public class TraderPersistenceService {
             writer.write(trader.getFirstName() + "\n");
             writer.write(trader.getSurname() + "\n");
             writer.write(trader.getBalance() + "\n");
+            writer.write(trader.getPasswordHash() + "\n");
 
             for (Stock stock : trader.getPortfolio().getHoldings().keySet()) {
                 int quantity = trader.getPortfolio().getQuantity(stock);
@@ -58,7 +59,9 @@ public class TraderPersistenceService {
             String firstName = fileScanner.nextLine();
             String surname = fileScanner.nextLine();
             double balance = Double.parseDouble(fileScanner.nextLine());
-            Trader trader = new Trader(id, savedUsername, firstName, surname, balance);
+            String passwordHash = fileScanner.nextLine();
+
+            Trader trader = new Trader(id, savedUsername, firstName, surname, balance, passwordHash);
 
             while (fileScanner.hasNextLine()) {
                 String line = fileScanner.nextLine();

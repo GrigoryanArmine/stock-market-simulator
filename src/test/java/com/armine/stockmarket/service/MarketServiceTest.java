@@ -51,7 +51,8 @@ class MarketServiceTest {
                 "test_trader",
                 "Test",
                 "Trader",
-                10000.00
+                10000.00,
+                "test-hash"
         );
 
         // Give the trader 5 shares of AAPL

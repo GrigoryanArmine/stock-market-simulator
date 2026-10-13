@@ -42,7 +42,12 @@ public class MarketPanel extends JPanel {
             data[i][2] = "$" + String.format(Locale.US, "%.2f", stock.getCurrentPrice());
         }
 
-        JTable stockTable = new JTable(data, columnNames);
+        JTable stockTable = new JTable(data, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         stockTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         JScrollPane scrollPane = new JScrollPane(stockTable);

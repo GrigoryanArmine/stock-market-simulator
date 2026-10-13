@@ -24,6 +24,7 @@ public class SellStockDialog extends JDialog {
     private JLabel totalLabel;
     private JLabel balanceLabel;
     private JLabel successLabel;
+    private JButton sellButton;
 
     public SellStockDialog(JFrame parent, Stock stock, Trader trader, TradingService tradingService, TraderPersistenceService traderPersistenceService, TransactionService transactionService) {
         super(parent, "Sell Stock", true);
@@ -54,7 +55,8 @@ public class SellStockDialog extends JDialog {
         successLabel = new JLabel(" ");
         successLabel.setForeground(new Color(0, 128, 0));
 
-        JButton sellButton = new JButton("Sell Stock");
+        sellButton = new JButton("Sell Stock");
+        sellButton.setEnabled(false);
         JButton cancelButton = new JButton("Cancel");
 
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -130,8 +132,10 @@ public class SellStockDialog extends JDialog {
         add(panel);
     }
 
+
     private void updateTotal() {
         String input = quantityField.getText().trim();
+        sellButton.setEnabled(false);
         if (input.isEmpty()) {
             errorLabel.setText(" ");
             totalLabel.setText("Total proceeds: $0.00");
@@ -143,6 +147,7 @@ public class SellStockDialog extends JDialog {
             double total = quantity * stock.getCurrentPrice();
             totalLabel.setText("Total proceeds: $" + String.format(Locale.US, "%.2f", total));
             errorLabel.setText(" ");
+            sellButton.setEnabled(true);
         } catch (NumberFormatException ex) {
             errorLabel.setText("Please enter a valid whole number.");
             totalLabel.setText("Total proceeds: $0.00");
@@ -151,4 +156,5 @@ public class SellStockDialog extends JDialog {
             totalLabel.setText("Total proceeds: $0.00");
         }
     }
+
 }

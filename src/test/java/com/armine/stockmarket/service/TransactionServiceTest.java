@@ -4,61 +4,58 @@ import com.armine.stockmarket.model.Stock;
 import com.armine.stockmarket.model.Transaction;
 import com.armine.stockmarket.model.TransactionType;
 import com.armine.stockmarket.model.Trader;
-import org.junit.jupiter.api.Test;
 
-import java.io.File;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class TransactionServiceTest {
-
     @Test
-    void shouldSaveAndLoadTransactions() {
-
-        String testDirectory = "test-transactions";
+    void shouldSaveAndLoadTransactions(@TempDir Path tempDir) {
 
         TransactionService transactionService =
-                new TransactionService(testDirectory);
+                new TransactionService(tempDir.toString());
 
-        MarketService marketService =
-                new MarketService();
-
+        MarketService marketService = new MarketService();
         marketService.initializeMarket();
 
-        Trader trader =
-                new Trader(
-                        123456,
-                        "armine",
-                        "Armine",
-                        "Grigoryan",
-                        10000
-                );
+        Trader trader = new Trader(
+                123456,
+                "armine",
+                "Armine",
+                "Grigoryan",
+                10000,
+                "test-hash"
+        );
 
-        Stock apple =
-                marketService.findStock("AAPL");
+        Stock apple = marketService.findStock("AAPL");
 
-        Transaction transaction =
-                new Transaction(
-                        apple,
-                        3,
-                        apple.getCurrentPrice(),
-                        TransactionType.BUY,
-                        LocalDateTime.now()
-                );
+        assertNotNull(apple);
+
+        Transaction transaction = new Transaction(
+                apple,
+                3,
+                apple.getCurrentPrice(),
+                TransactionType.BUY,
+                LocalDateTime.now()
+        );
 
         trader.addTransaction(transaction);
 
         transactionService.saveTransactions(trader);
 
-        Trader loadedTrader =
-                new Trader(
-                        123456,
-                        "armine",
-                        "Armine",
-                        "Grigoryan",
-                        10000
-                );
+        Trader loadedTrader = new Trader(
+                123456,
+                "armine",
+                "Armine",
+                "Grigoryan",
+                10000,
+                "test-hash"
+        );
 
         transactionService.loadTransactions(
                 loadedTrader,
@@ -87,47 +84,40 @@ class TransactionServiceTest {
                 3,
                 loadedTransaction.getQuantity()
         );
-
-        deleteDirectory(testDirectory);
     }
 
     @Test
-    void shouldKeepTraderTransactionsSeparate() {
-
-        String testDirectory =
-                "test-transactions-separate";
+    void shouldKeepTraderTransactionsSeparate(@TempDir Path tempDir) {
 
         TransactionService transactionService =
-                new TransactionService(testDirectory);
+                new TransactionService(tempDir.toString());
 
-        MarketService marketService =
-                new MarketService();
-
+        MarketService marketService = new MarketService();
         marketService.initializeMarket();
 
-        Trader anna =
-                new Trader(
-                        123456,
-                        "anna",
-                        "Anna",
-                        "Smith",
-                        10000
-                );
+        Trader anna = new Trader(
+                123456,
+                "anna",
+                "Anna",
+                "Smith",
+                10000,
+                "test-hash"
+        );
 
-        Trader david =
-                new Trader(
-                        654321,
-                        "david",
-                        "David",
-                        "Brown",
-                        10000
-                );
+        Trader david = new Trader(
+                654321,
+                "david",
+                "David",
+                "Brown",
+                10000,
+                "test-hash"
+        );
 
-        Stock apple =
-                marketService.findStock("AAPL");
+        Stock apple = marketService.findStock("AAPL");
+        Stock tesla = marketService.findStock("TSLA");
 
-        Stock tesla =
-                marketService.findStock("TSLA");
+        assertNotNull(apple);
+        assertNotNull(tesla);
 
         anna.addTransaction(
                 new Transaction(
@@ -152,23 +142,23 @@ class TransactionServiceTest {
         transactionService.saveTransactions(anna);
         transactionService.saveTransactions(david);
 
-        Trader loadedAnna =
-                new Trader(
-                        123456,
-                        "anna",
-                        "Anna",
-                        "Smith",
-                        10000
-                );
+        Trader loadedAnna = new Trader(
+                123456,
+                "anna",
+                "Anna",
+                "Smith",
+                10000,
+                "test-hash"
+        );
 
-        Trader loadedDavid =
-                new Trader(
-                        654321,
-                        "david",
-                        "David",
-                        "Brown",
-                        10000
-                );
+        Trader loadedDavid = new Trader(
+                654321,
+                "david",
+                "David",
+                "Brown",
+                10000,
+                "test-hash"
+        );
 
         transactionService.loadTransactions(
                 loadedAnna,
@@ -205,24 +195,32 @@ class TransactionServiceTest {
                         .getStock()
                         .getSymbol()
         );
-
-        deleteDirectory(testDirectory);
     }
 
-    private void deleteDirectory(String directoryName) {
+    @Test
+    void shouldThrowExceptionWhenTransactionDirectoryIsInvalid(
+            @TempDir Path tempDir) throws java.io.IOException {
 
-        File directory =
-                new File(directoryName);
+        // Create a regular file instead of a directory
+        Path invalidDirectory = tempDir.resolve("not-a-directory");
+        java.nio.file.Files.createFile(invalidDirectory);
 
-        File[] files =
-                directory.listFiles();
+        TransactionService transactionService =
+                new TransactionService(invalidDirectory.toString());
 
-        if (files != null) {
-            for (File file : files) {
-                file.delete();
-            }
-        }
+        Trader trader = new Trader(
+                123456,
+                "testuser",
+                "Test",
+                "User",
+                10000,
+                "test-hash"
+        );
 
-        directory.delete();
+        assertThrows(
+                IllegalStateException.class,
+                () -> transactionService.saveTransactions(trader)
+        );
     }
+
 }

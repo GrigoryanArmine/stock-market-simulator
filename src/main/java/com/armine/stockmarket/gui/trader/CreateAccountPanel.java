@@ -1,4 +1,3 @@
-
 package com.armine.stockmarket.gui.trader;
 
 import com.armine.stockmarket.model.Trader;
@@ -7,12 +6,12 @@ import com.armine.stockmarket.service.TraderPersistenceService;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 public class CreateAccountPanel extends JPanel {
 
     public CreateAccountPanel(TraderService traderService, TraderPersistenceService traderPersistenceService, Consumer<Trader> onAccountCreated, Runnable onBack) {
-
         setLayout(new GridBagLayout());
 
         JPanel accountPanel = new JPanel();
@@ -34,10 +33,20 @@ public class CreateAccountPanel extends JPanel {
         JLabel usernameLabel = new JLabel("Username");
         JTextField usernameField = new JTextField(15);
 
-        // Keep default text field sizes
+        // Password
+        JLabel passwordLabel = new JLabel("Password");
+        JPasswordField passwordField = new JPasswordField(15);
+
+        // Confirm password
+        JLabel confirmPasswordLabel = new JLabel("Confirm password");
+        JPasswordField confirmPasswordField = new JPasswordField(15);
+
+        // Keep default field sizes
         firstNameField.setMaximumSize(firstNameField.getPreferredSize());
         surnameField.setMaximumSize(surnameField.getPreferredSize());
         usernameField.setMaximumSize(usernameField.getPreferredSize());
+        passwordField.setMaximumSize(passwordField.getPreferredSize());
+        confirmPasswordField.setMaximumSize(confirmPasswordField.getPreferredSize());
 
         // Error message
         JLabel errorLabel = new JLabel(" ");
@@ -49,18 +58,30 @@ public class CreateAccountPanel extends JPanel {
 
         // Create account functionality
         createButton.addActionListener(e -> {
+            errorLabel.setText(" ");
+
             String firstName = firstNameField.getText().trim();
             String surname = surnameField.getText().trim();
             String username = usernameField.getText().trim();
 
+            char[] password = passwordField.getPassword();
+            char[] confirmPassword = confirmPasswordField.getPassword();
+
             try {
-                Trader trader = traderService.createTrader(firstName, surname, username);
+                if (!Arrays.equals(password, confirmPassword))
+                    throw new IllegalArgumentException("Passwords do not match.");
+
+                Trader trader = traderService.createTrader(firstName, surname, username, password);
 
                 traderPersistenceService.saveTrader(trader);
                 onAccountCreated.accept(trader);
 
-            } catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException | IllegalStateException ex) {
                 errorLabel.setText(ex.getMessage());
+
+            } finally {
+                Arrays.fill(password, '\0');
+                Arrays.fill(confirmPassword, '\0');
             }
         });
 
@@ -68,7 +89,7 @@ public class CreateAccountPanel extends JPanel {
         backButton.addActionListener(e -> onBack.run());
 
         // Press Enter to create account
-        usernameField.addActionListener(e -> createButton.doClick());
+        confirmPasswordField.addActionListener(e -> createButton.doClick());
 
         // Center components
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -82,6 +103,12 @@ public class CreateAccountPanel extends JPanel {
 
         usernameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         usernameField.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        passwordLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        passwordField.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        confirmPasswordLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        confirmPasswordField.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         createButton.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -110,6 +137,18 @@ public class CreateAccountPanel extends JPanel {
 
         accountPanel.add(Box.createVerticalStrut(6));
         accountPanel.add(usernameField);
+
+        accountPanel.add(Box.createVerticalStrut(12));
+        accountPanel.add(passwordLabel);
+
+        accountPanel.add(Box.createVerticalStrut(6));
+        accountPanel.add(passwordField);
+
+        accountPanel.add(Box.createVerticalStrut(12));
+        accountPanel.add(confirmPasswordLabel);
+
+        accountPanel.add(Box.createVerticalStrut(6));
+        accountPanel.add(confirmPasswordField);
 
         accountPanel.add(Box.createVerticalStrut(8));
         accountPanel.add(errorLabel);

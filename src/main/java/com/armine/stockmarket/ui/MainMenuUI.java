@@ -7,11 +7,16 @@ import com.armine.stockmarket.service.TraderService;
 import com.armine.stockmarket.service.TradingService;
 import com.armine.stockmarket.service.TransactionService;
 import com.armine.stockmarket.model.Admin;
+import com.armine.stockmarket.service.AdminService;
+import com.armine.stockmarket.service.PasswordService;
+
+import java.util.Arrays;
 
 import java.util.Scanner;
 
 public class MainMenuUI {
     private TraderService traderService;
+    private AdminService adminService;
     private TraderPersistenceService traderPersistenceService;
     private MarketService marketService;
     private TradingService tradingService;
@@ -21,12 +26,14 @@ public class MainMenuUI {
 
     public MainMenuUI(
             TraderService traderService,
+            AdminService adminService,
             TraderPersistenceService traderPersistenceService,
             MarketService marketService,
             TradingService tradingService,
             TransactionService transactionService,
             Admin admin) {
         this.traderService = traderService;
+        this.adminService = adminService;
         this.traderPersistenceService = traderPersistenceService;
         this.marketService = marketService;
         this.tradingService = tradingService;
@@ -47,45 +54,45 @@ public class MainMenuUI {
         System.out.println();
         System.out.print("Choose an option: ");
     }
+
     private void createAccount() {
         System.out.println();
+
         System.out.print("Enter first name: ");
         String firstName = scanner.nextLine().trim();
 
-        if (firstName.isBlank()) {
-            System.out.println("First name cannot be empty.");
-            return;
-        }
-
         System.out.print("Enter surname: ");
         String surname = scanner.nextLine().trim();
-        if (surname.isBlank()) {
-            System.out.println("Surname cannot be empty.");
-            return;
-        }
 
         System.out.print("Choose a username: ");
         String username = scanner.nextLine().trim();
-        if (username.isBlank()) {
-            System.out.println("Username cannot be empty.");
-            return;
+
+        System.out.print("Choose a password: ");
+        char[] password = scanner.nextLine().toCharArray();
+
+        System.out.print("Confirm password: ");
+        char[] confirmPassword = scanner.nextLine().toCharArray();
+
+        try {
+            if (!Arrays.equals(password, confirmPassword))
+                throw new IllegalArgumentException("Passwords do not match.");
+
+            Trader trader = traderService.createTrader(firstName, surname, username, password);
+            traderPersistenceService.saveTrader(trader);
+
+            System.out.println("Account created successfully!");
+            System.out.println("Trader ID: " + trader.getId());
+            System.out.println("Username: " + trader.getUsername());
+
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            System.out.println(ex.getMessage());
+
+        } finally {
+            Arrays.fill(password, '\0');
+            Arrays.fill(confirmPassword, '\0');
         }
-
-        if (traderService.findTraderByUsername(username) != null) {
-            System.out.println("Username already exists.");
-            return;
-        }
-
-        int id = traderService.generateUniqueId();
-        Trader trader = new Trader(id, username, firstName, surname, 10000);
-
-        traderService.addTrader(trader);
-        traderPersistenceService.saveTrader(trader);
-
-        System.out.println("Account created successfully!");
-        System.out.println("Trader ID: " + id);
-        System.out.println("Username: " + username);
     }
+
     public void start() {
         boolean running = true;
 
@@ -97,8 +104,7 @@ public class MainMenuUI {
                     showTraderMenu();
                     break;
                 case "2":
-                    AdminUI adminUI = new AdminUI(admin, marketService, traderService);
-                    adminUI.start();
+                    loginAdmin();
                     break;
                 case "3":
                     running = false;
@@ -129,13 +135,7 @@ public class MainMenuUI {
                 case "1":
                     Trader selectedTrader = login();
                     if (selectedTrader != null) {
-                        ConsoleUI consoleUI = new ConsoleUI(
-                                        selectedTrader,
-                                        marketService,
-                                        tradingService,
-                                        traderPersistenceService,
-                                        transactionService
-                        );
+                        ConsoleUI consoleUI = new ConsoleUI(selectedTrader, marketService, tradingService, traderPersistenceService, transactionService);
                         consoleUI.start();
                     }
                     break;
@@ -154,18 +154,46 @@ public class MainMenuUI {
         System.out.println();
         System.out.print("Enter username: ");
         String username = scanner.nextLine().trim();
-        if (username.isBlank()) {
-            System.out.println("Username cannot be empty.");
-            return null;
-        }
 
-        Trader trader = traderService.findTraderByUsername(username);
-        if (trader == null) {
-            System.out.println("Account not found.");
-            return null;
-        }
+        System.out.print("Enter password: ");
+        char[] password = scanner.nextLine().toCharArray();
 
-        System.out.println("Welcome, " + trader.getFirstName() + "!");
-        return trader;
+        try {
+            Trader trader = traderService.login(username, password);
+            System.out.println("Welcome, " + trader.getFirstName() + "!");
+            return trader;
+
+        } catch (IllegalArgumentException ex) {
+            System.out.println(ex.getMessage());
+            return null;
+        } finally {
+            Arrays.fill(password, '\0');
+        }
+    }
+    private void loginAdmin() {
+        System.out.println();
+        System.out.println("ADMIN LOGIN");
+
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine().trim();
+
+        System.out.print("Enter password: ");
+        char[] password = scanner.nextLine().toCharArray();
+
+        try {
+            Admin loggedInAdmin = adminService.login(username, password);
+            if (loggedInAdmin == null) {
+                System.out.println("Incorrect username or password.");
+                return;
+            }
+
+            System.out.println("Welcome, " + loggedInAdmin.getFirstName() + "!");
+
+            AdminUI adminUI = new AdminUI(loggedInAdmin, marketService, traderService);
+            adminUI.start();
+
+        } finally {
+            Arrays.fill(password, '\0');
+        }
     }
 }

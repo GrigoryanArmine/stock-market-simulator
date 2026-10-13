@@ -20,14 +20,16 @@ public class TransactionService {
 
     public void saveTransactions(Trader trader) {
 
-        if (trader == null) {
+        if (trader == null)
             throw new IllegalArgumentException("Trader cannot be null.");
-        }
+
         File directory = new File(directoryName);
 
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
+        if (!directory.exists() && !directory.mkdirs())
+            throw new IllegalStateException("Could not create transaction directory.");
+        if (!directory.isDirectory())
+            throw new IllegalStateException("Transaction storage path is not a directory.");
+
         File file = new File(directory, trader.getUsername() + ".txt");
 
         try (FileWriter writer = new FileWriter(file)) {
@@ -46,8 +48,8 @@ public class TransactionService {
                                 + "\n"
                 );
             }
-        } catch (IOException e) {
-            System.out.println("Could not save transactions: " + e.getMessage());
+        }  catch (IOException e) {
+            throw new IllegalStateException("Could not save transactions for " + trader.getUsername() + ": " + e.getMessage(), e);
         }
     }
 

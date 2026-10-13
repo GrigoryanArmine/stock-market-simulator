@@ -9,8 +9,8 @@ public class Trader extends User {
     private Portfolio portfolio;
     private List<Transaction> transactions;
 
-    public Trader(int id, String username, String firstName, String surname, double balance) {
-        super(firstName, surname, username);
+    public Trader(int id, String username, String firstName, String surname, double balance, String passwordHash) {
+        super(firstName, surname, username, passwordHash);
         if (id <= 0) {
             throw new IllegalArgumentException("Trader ID must be greater than zero.");
         }
