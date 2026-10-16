@@ -35,3 +35,6 @@ transactions.txt
 traders/
 transactions/
 market.txt
+
+# macOS
+.DS_Store

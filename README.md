@@ -1,431 +1,143 @@
 # Stock Market Trading Simulator
 
-A Java-based stock market trading simulator built to practice
-object-oriented programming, software design, unit testing, exception
-handling, and file-based data persistence.
+A Java-based stock market trading simulator built using object-oriented programming principles, Java Swing, Maven, and JUnit 5.
 
-The application allows a trader to buy and sell stocks, manage a
-portfolio, track transactions, and continue from previously saved data
-after restarting the application.
+The application provides graphical and console interfaces for managing simulated stock trading accounts. Traders can buy and sell stocks, manage portfolios, review transaction history, and restore their account data after restarting the application.
+
+The project was developed to practice Java software development, object-oriented design, authentication, exception handling, file persistence, and automated testing.
 
 ## Features
 
--   View available stocks
--   Buy stocks
--   Sell stocks
--   View portfolio
--   Track account balance
--   Add money to the account
--   View transaction history
--   Input validation
--   Custom exceptions for trading errors
--   Save and load trader data
--   Save and load transaction history
--   Unit testing with JUnit 5
--   Console-based user interface
+### Trader Features
+- Register and log in to a trading account
+- View available stocks and current market prices
+- Buy and sell stocks using simulated funds
+- Add money to a trading account
+- View account balance and portfolio holdings
+- Calculate portfolio value using current market prices
+- Review historical BUY and SELL transactions
+- Save and restore account information between sessions
+
+### Administrator Features
+- Log in through the administrator interface
+- Add stocks to the market
+- Update stock prices
+- Remove stocks when no trader owns shares
+- View registered traders and their portfolios
+
+### Additional Functionality
+- Java Swing graphical interface
+- Interactive console interface
+- Input validation and error handling
+- Password hashing for authentication
+- File-based data persistence
+- Defensive copying to protect internal state
+- JUnit 5 automated tests
 
 ## Technologies
 
--   **Java 17**
--   **Maven**
--   **JUnit 5**
--   **IntelliJ IDEA**
--   **Git & GitHub**
+- Java 17
+- Java Swing
+- Maven
+- JUnit 5
+- Git and GitHub
+- IntelliJ IDEA
 
-## Architecture
+## Project Architecture
 
-The project separates the user interface, business logic, data models,
-and persistence.
+The application separates responsibilities into four main areas:
 
-``` text
-                         Main
-                          |
-                    ConsoleUI
-                          |
-              +-----------+-----------+
-              |                       |
-       TradingService           Persistence
-              |                 Services
-              |                       |
-            Trader              Text Files
-              |
-       +------+------+
-       |             |
-   Portfolio    Transactions
-```
+**Model Layer:** Defines the main objects, including `User`, `Trader`, `Admin`, `Stock`, `Portfolio`, and `Transaction`.
 
-## Main Components
+**Service Layer:** Implements trading operations, market management, user authentication, and application rules.
 
-### Model
+**Persistence Layer:** Saves and loads market information, trader accounts, portfolio holdings, and transaction history using text files.
 
-Contains the core objects of the application:
+**User Interface Layer:** Contains the Java Swing GUI and console interface.
 
--   `User`
--   `Trader`
--   `Admin`
--   `Stock`
--   `Portfolio`
--   `Transaction`
--   `TransactionType`
+This separation allows business rules to remain independent of the graphical interface.
 
-### Services
+## Object-Oriented Programming
 
-Contains the application's business logic and persistence operations:
+The project demonstrates:
 
--   `MarketService` --- manages stocks available on the market.
--   `TradingService` --- handles buying and selling stocks.
--   `TransactionService` --- saves and loads transaction history.
--   `TraderPersistenceService` --- saves and loads trader information
-    and portfolio data.
+- **Encapsulation:** Account balances, holdings, and other internal data are managed through class methods.
+- **Inheritance:** `Trader` and `Admin` extend `User`.
+- **Polymorphism:** Different user types share a common superclass.
+- **Composition:** A trader maintains a portfolio and a collection of transactions.
+- **Abstraction:** Service classes separate business operations from user-interface code.
+- **Exception Handling:** Invalid transactions and operations are handled through validation and exceptions.
 
-### UI
+## Data Persistence
 
--   `ConsoleUI` --- provides the interactive command-line interface and
-    handles user input.
+The simulator stores application information in local text files.
 
-### Exceptions
+- Market data is stored separately from trader account data.
+- Individual traders have their own saved account information.
+- Transaction histories are saved separately.
+- Historical transactions retain their execution prices.
 
--   `InsufficientFundsException`
--   `InsufficientSharesException`
+The persistence services use temporary files and atomic file replacement to reduce the risk of losing an existing file during failed saves. Market operations also include rollback logic for selected saving failures.
 
-These exceptions are used to handle specific trading errors.
-
-## Object-Oriented Programming Concepts
-
-This project demonstrates several core OOP concepts.
-
-### Encapsulation
-
-Class fields are kept private and accessed through methods. For example,
-`Trader` manages its balance, portfolio, and transactions through its
-methods.
-
-### Inheritance
-
-`Trader` and `Admin` extend the `User` class.
-
-``` text
-        User
-       /    \
-   Trader   Admin
-```
-
-This allows common user information, such as the name, to be defined
-once in the parent class.
-
-### Polymorphism
-
-Objects of different subclasses can be referenced using their parent
-type.
-
-``` java
-User user1 = trader;
-User user2 = admin;
-```
-
-The objects can be handled through the common `User` type while
-retaining their actual subclass identity.
-
-### Composition
-
-A `Trader` has a `Portfolio` and a collection of `Transaction` objects.
-This represents a "has-a" relationship between the classes.
-
-### Separation of Responsibilities
-
-Different parts of the application have different responsibilities.
-
-``` text
-ConsoleUI
-    |
-TradingService
-    |
-Trader / Portfolio
-```
-
-The UI handles interaction with the user, while the service layer
-handles trading operations. This separation makes the application easier
-to maintain and extend.
-
-### Enums
-
-`TransactionType` represents the supported transaction types:
-
-``` java
-BUY
-SELL
-```
-
-Using an enum avoids representing transaction types as arbitrary strings
-throughout the application.
-
-### Custom Exceptions
-
-The application uses custom checked exceptions for specific trading
-errors:
-
--   `InsufficientFundsException`
--   `InsufficientSharesException`
-
-This makes trading failures more explicit and easier to handle.
-
-## Persistence
-
-The application uses text files to preserve data between sessions.
-
-### Trader Data
-
-Trader information and portfolio holdings are stored in `trader.txt`.
-
-The stored information includes:
-
--   Trader name
--   Account balance
--   Stock symbol
--   Company name
--   Current price
--   Number of shares
-
-### Transaction History
-
-Transaction history is stored in `transactions.txt`.
-
-Each transaction contains:
-
--   Transaction type
--   Stock symbol
--   Company name
--   Quantity
--   Price per share
--   Date and time
-
-When the application starts, previously saved trader and transaction
-data is loaded. When the user exits, the current state is saved.
+**Limitation:** Trader account files and transaction-history files are saved independently. An interruption between these operations can leave their saved states inconsistent. The simulator is an educational application and is not intended for real financial transactions.
 
 ## Testing
 
-The project uses **JUnit 5** for automated testing.
+The project uses JUnit 5 for automated testing.
 
-The test suite covers:
+The tests cover stock validation, portfolio operations, trading operations, authentication, market management, persistence, and selected failure scenarios.
 
--   Stock creation and validation
--   Stock symbol normalization and equality
--   Stock price updates
--   Portfolio operations, including adding and removing shares
--   Portfolio value calculation
--   Buying and selling stocks
--   Insufficient funds and insufficient shares
--   Invalid quantities
--   Transaction creation, validation, and date/time
--   Transaction persistence
--   Trader persistence
+**Latest verified results:**
 
-### Test Results
+| Test category | Result |
+|---|---|
+| Automated JUnit tests | 59 passed |
+| Manual GUI checks | 31 passed |
+| Final GUI smoke checks | 4 passed |
+| Maven clean build | Successful |
 
-**27 tests passed** in the latest verified run.
-
-The tests are organized by package:
-
-``` text
-src/test/java/
-└── com/armine/stockmarket/
-    ├── model/
-    │   ├── StockTest.java
-    │   ├── PortfolioTest.java
-    │   └── TransactionTest.java
-    └── service/
-        ├── TradingServiceTest.java
-        ├── TransactionServiceTest.java
-        └── TraderPersistenceServiceTest.java
-```
-
-## Example
-
-The application presents the trader with a console menu similar to the
-following:
-
-``` text
-==============================
-   STOCK MARKET SIMULATOR
-==============================
-Trader: Armine
-Balance: $9338.5
-
-1. View available stocks
-2. Buy stock
-3. Sell stock
-4. View portfolio
-5. View transactions
-6. Add money
-7. Exit
-
-Choose an option:
-```
-
-### Available Stocks
-
-The market is initialized with example stocks:
-
-``` text
-AAPL - Apple ($220.5)
-MSFT - Microsoft ($510.0)
-GOOG - Google ($250.0)
-AMZN - Amazon ($230.0)
-TSLA - Tesla ($350.0)
-```
-
-### Portfolio
-
-After purchasing stocks, the portfolio displays the trader's holdings
-and their current total value:
-
-``` text
-My Portfolio:
-AAPL - 3 shares
-Total value: $661.5
-```
-
-### Transactions
-
-Successful buy and sell operations are recorded in the transaction
-history. An example entry is:
-
-``` text
-BUY 3 shares of AAPL at $220.5 each | Total: $661.5 | 2026-09-26T23:13:54
-```
-
-## Project Structure
-
-``` text
-stock-market-simulator/
-├── README.md
-├── .gitignore
-├── pom.xml
-└── src/
-    ├── main/
-    │   └── java/
-    │       └── com/armine/stockmarket/
-    │           ├── Main.java
-    │           ├── model/
-    │           │   ├── Admin.java
-    │           │   ├── Portfolio.java
-    │           │   ├── Stock.java
-    │           │   ├── Trader.java
-    │           │   ├── Transaction.java
-    │           │   ├── TransactionType.java
-    │           │   └── User.java
-    │           ├── service/
-    │           │   ├── MarketService.java
-    │           │   ├── TradingService.java
-    │           │   ├── TransactionService.java
-    │           │   └── TraderPersistenceService.java
-    │           ├── exception/
-    │           │   ├── InsufficientFundsException.java
-    │           │   └── InsufficientSharesException.java
-    │           └── ui/
-    │               └── ConsoleUI.java
-    └── test/
-        └── java/
-            └── com/armine/stockmarket/
-                ├── model/
-                │   ├── StockTest.java
-                │   ├── PortfolioTest.java
-                │   └── TransactionTest.java
-                └── service/
-                    ├── TradingServiceTest.java
-                    ├── TransactionServiceTest.java
-                    └── TraderPersistenceServiceTest.java
-```
+Run the automated tests through IntelliJ IDEA's Maven tool window using **Lifecycle → test**, or with an installed Maven command-line executable.
 
 ## How to Run
 
 ### Requirements
+- JDK 17 or later
+- IntelliJ IDEA or another Java IDE
+- Maven support
 
--   Java 17 or later
--   IntelliJ IDEA
--   Maven support
+### Graphical Interface
 
-### Run the Application in IntelliJ IDEA
+1. Clone the repository and open the project in IntelliJ IDEA.
+2. Load the Maven project.
+3. Select a compatible JDK.
+4. Open `src/main/java/com/armine/stockmarket/gui/GuiMain.java`.
+5. Run `GuiMain`.
+6. Select the trader or administrator interface.
 
-1.  Clone or download the repository.
-2.  Open the project in IntelliJ IDEA.
-3.  Configure a compatible JDK (Java 17 or later).
-4.  Reload the Maven project if prompted.
-5.  Open `src/main/java/com/armine/stockmarket/Main.java`.
-6.  Run the `Main` class.
+### Console Interface
 
-The application saves its data to text files when the trader exits.
+Run `src/main/java/com/armine/stockmarket/Main.java` in IntelliJ IDEA.
 
-### Run the Tests
+### Running Tests
 
-In IntelliJ IDEA, open the test source directory under `src/test/java`
-and run the test classes or the test package.
+Open the Maven tool window and execute **Lifecycle → test**.
 
-## Data Persistence
-
-The application saves trader and transaction information when the user
-exits. On the next launch, it loads the saved information so the session
-can continue.
-
-For example:
-
-``` text
-Before exiting:
-Balance: $9338.5
-Portfolio: AAPL - 3 shares
-
-        |
-        v
-
-Application exits and saves data
-
-        |
-        v
-
-Application starts again and loads saved data
-
-        |
-        v
-
-Balance: $9338.5
-Portfolio: AAPL - 3 shares
-```
+The test suite uses temporary storage locations for persistence tests, avoiding modifications to normal application data.
 
 ## Future Improvements
 
-Possible future improvements include:
+Potential future extensions include:
 
--   A graphical user interface using Java Swing
--   More advanced market price simulation
--   Price updates during the simulation
--   Multiple trader accounts
--   Portfolio performance statistics
--   An improved persistence format
--   Additional automated tests
--   More detailed transaction and portfolio analytics
-
-## Learning Goals
-
-This project was developed as a practical way to strengthen Java and
-object-oriented programming skills.
-
-The main goals were to practice:
-
--   Designing classes and relationships
--   Applying OOP principles
--   Encapsulation, inheritance, polymorphism, and composition
--   Separating responsibilities between classes
--   Handling exceptions
--   Writing unit tests
--   Working with files
--   Designing service classes
--   Using Git and GitHub
--   Building a complete application from the model layer to the user
-    interface
+- More advanced portfolio performance analytics
+- Historical stock price charts
+- Improved transaction consistency across multiple files
+- Database-backed persistence
+- Additional automated integration tests
 
 ## Author
 
-**Armine Grigoryan**
+Armine Grigoryan
 
-Computer Science student interested in Java, object-oriented
-programming, and software development.
+BSc Computer Science student at the American University of Armenia.
+
+This project was developed to strengthen practical Java, object-oriented programming, software design, and testing skills.
