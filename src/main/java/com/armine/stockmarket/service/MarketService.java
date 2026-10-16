@@ -6,6 +6,7 @@ import com.armine.stockmarket.model.Trader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class MarketService {
@@ -14,8 +15,18 @@ public class MarketService {
     private boolean loading = false;
 
     public MarketService() {
-        this(null);
+        this.stocks = new HashMap<>();
+        this.persistenceService = null;
     }
+
+    public MarketService(MarketPersistenceService persistenceService) {
+        if (persistenceService == null)
+            throw new IllegalArgumentException("MarketPersistenceService cannot be null.");
+
+        this.stocks = new HashMap<>();
+        this.persistenceService = new MarketPersistenceService(persistenceService);
+    }
+
     public void beginLoading() {
         loading = true;
     }
@@ -23,27 +34,35 @@ public class MarketService {
     public void finishLoading() {
         loading = false;
     }
-    public MarketService(MarketPersistenceService persistenceService) {
-        this.stocks = new HashMap<>();
-        this.persistenceService = persistenceService;
-    }
 
     public void addStock(Stock stock) {
-        if (stock == null) {
-            throw new IllegalArgumentException("Stock cannot be null.");
+        if (stock == null) throw new IllegalArgumentException("Stock cannot be null.");
+
+        String symbol = stock.getSymbol();
+
+        if (stocks.containsKey(symbol)) throw new IllegalArgumentException("Stock symbol already exists.");
+
+        stocks.put(symbol, stock);
+
+        try {
+            saveChanges();
+        } catch (IllegalStateException ex) {
+            // Restore the market if saving fails
+            stocks.remove(symbol);
+            throw ex;
         }
-        if (stocks.containsKey(stock.getSymbol())) {
-            throw new IllegalArgumentException("Stock symbol already exists.");
-        }
-        stocks.put(stock.getSymbol(), stock);
-        saveChanges();
     }
 
     public Stock findStock(String symbol) {
-        if (symbol == null || symbol.isBlank()) {
+        if (symbol == null || symbol.isBlank())
             throw new IllegalArgumentException("Stock symbol cannot be empty.");
-        }
-        return stocks.get(symbol.toUpperCase());
+        return stocks.get(symbol.trim().toUpperCase(Locale.ROOT));
+    }
+
+    public Stock requireStock(String symbol) {
+        Stock stock = findStock(symbol);
+        if (stock == null) throw new IllegalArgumentException("Stock not found.");
+        return stock;
     }
 
     public List<Stock> getAllStocks() {
@@ -51,31 +70,41 @@ public class MarketService {
     }
 
     public void updatePrice(String symbol, double newPrice) {
-        Stock stock = findStock(symbol);
-        if (stock == null) {
-            throw new IllegalArgumentException("Stock not found.");
-        }
+        Stock stock = requireStock(symbol);
+
+        double oldPrice = stock.getCurrentPrice();
+
+        // Stock validates the new price
         stock.updatePrice(newPrice);
-        saveChanges();
+        try {
+            saveChanges();
+        } catch (IllegalStateException ex) {
+            // Restore the previous price
+            stock.updatePrice(oldPrice);
+            throw ex;
+        }
     }
 
     public void removeStock(String symbol, TraderService traderService) {
-        Stock stock = findStock(symbol);
-        if (stock == null) {
-            throw new IllegalArgumentException("Stock not found.");
-        }
-        if (traderService == null) {
+        if (traderService == null)
             throw new IllegalArgumentException("Trader service cannot be null.");
-        }
+
+        Stock stock = requireStock(symbol);
 
         for (Trader trader : traderService.getAllTraders()) {
-            if (trader.getPortfolio().getQuantity(stock) > 0) {
-                throw new IllegalArgumentException("Cannot remove stock. A trader currently owns shares.");
-            }
+            if (trader.getOwnedShares(stock) > 0)
+                throw new IllegalArgumentException("Cannot remove stock. " + "A trader currently owns shares.");
         }
 
         stocks.remove(stock.getSymbol());
-        saveChanges();
+
+        try {
+            saveChanges();
+        } catch (IllegalStateException ex) {
+            // Restore the removed stock
+            stocks.put(stock.getSymbol(), stock);
+            throw ex;
+        }
     }
 
     public void initializeMarket() {

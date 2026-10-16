@@ -11,6 +11,16 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Assumptions;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.EnumSet;
+import java.util.Set;
+
+
 class TraderPersistenceServiceTest {
 
     @TempDir
@@ -36,7 +46,7 @@ class TraderPersistenceServiceTest {
         Stock apple = marketService.findStock("AAPL");
         assertNotNull(apple);
 
-        trader.getPortfolio().addStock(apple, 3);
+        trader.addShares(apple, 3);
 
         persistenceService.saveTrader(trader);
 
@@ -82,8 +92,8 @@ class TraderPersistenceServiceTest {
         assertNotNull(apple);
         assertNotNull(tesla);
 
-        armine.getPortfolio().addStock(apple, 2);
-        anna.getPortfolio().addStock(tesla, 4);
+        armine.addShares(apple, 2);
+        anna.addShares(tesla, 4);
 
         persistenceService.saveTrader(armine);
         persistenceService.saveTrader(anna);
@@ -185,7 +195,7 @@ class TraderPersistenceServiceTest {
                 1000, "test-hash-user"
         );
 
-        trader.getPortfolio().addStock(stock, 2);
+        trader.addShares(stock, 2);
         persistenceService.saveTrader(trader);
 
         MarketService emptyMarket = new MarketService();
@@ -199,4 +209,172 @@ class TraderPersistenceServiceTest {
 
         assertNull(emptyMarket.findStock("TEST"));
     }
+
+    @Test
+    void shouldSaveUpdatedBalanceAndHoldings() {
+        TraderPersistenceService persistenceService =
+                new TraderPersistenceService(tempDir.toString());
+
+        MarketService marketService = new MarketService();
+        marketService.initializeMarket();
+
+        Stock apple = marketService.requireStock("AAPL");
+
+        Trader trader = new Trader(
+                123456,
+                "armine",
+                "Armine",
+                "Grigoryan",
+                10000,
+                "test-hash"
+        );
+
+        trader.addShares(apple, 2);
+        persistenceService.saveTrader(trader);
+
+        // Update the trader's account.
+        trader.addMoney(500);
+        trader.addShares(apple, 3);
+
+        // Save the updated information.
+        persistenceService.saveTrader(trader);
+
+        Trader loadedTrader =
+                persistenceService.loadTrader(
+                        "armine",
+                        marketService
+                );
+
+        assertNotNull(loadedTrader);
+        assertEquals(10500, loadedTrader.getBalance(), 0.001);
+        assertEquals(5, loadedTrader.getOwnedShares(apple));
+        assertEquals("test-hash", loadedTrader.getPasswordHash());
+    }
+
+    @Test
+    void shouldPreserveExistingTraderFileWhenSavingFails()
+            throws IOException {
+
+        TraderPersistenceService persistenceService =
+                new TraderPersistenceService(tempDir.toString());
+
+        MarketService marketService = new MarketService();
+        marketService.initializeMarket();
+
+        Stock apple = marketService.requireStock("AAPL");
+
+        Trader trader = new Trader(
+                123456,
+                "armine",
+                "Armine",
+                "Grigoryan",
+                10000,
+                "test-hash"
+        );
+
+        trader.addShares(apple, 2);
+        persistenceService.saveTrader(trader);
+
+        Path savedFile = tempDir.resolve("armine.txt");
+        byte[] originalContents = Files.readAllBytes(savedFile);
+
+        // Change the trader's state in memory.
+        trader.addMoney(500);
+        trader.addShares(apple, 1);
+
+        // This test requires a POSIX filesystem.
+        Assumptions.assumeTrue(
+                Files.getFileStore(tempDir)
+                        .supportsFileAttributeView("posix")
+        );
+
+        Set<PosixFilePermission> originalPermissions =
+                Files.getPosixFilePermissions(tempDir);
+
+        try {
+            // Prevent creating a temporary save file.
+            Files.setPosixFilePermissions(
+                    tempDir,
+                    EnumSet.of(
+                            PosixFilePermission.OWNER_READ,
+                            PosixFilePermission.OWNER_EXECUTE
+                    )
+            );
+
+            Assumptions.assumeFalse(
+                    Files.isWritable(tempDir),
+                    "Filesystem does not enforce these permissions."
+            );
+
+            assertThrows(
+                    IllegalStateException.class,
+                    () -> persistenceService.saveTrader(trader)
+            );
+
+        } finally {
+            // Restore permissions even when the test fails.
+            Files.setPosixFilePermissions(
+                    tempDir,
+                    originalPermissions
+            );
+        }
+
+        // The previously saved account must remain unchanged.
+        assertArrayEquals(
+                originalContents,
+                Files.readAllBytes(savedFile)
+        );
+
+        Trader loadedTrader =
+                persistenceService.loadTrader(
+                        "armine",
+                        marketService
+                );
+
+        assertNotNull(loadedTrader);
+        assertEquals(10000, loadedTrader.getBalance(), 0.001);
+        assertEquals(2, loadedTrader.getOwnedShares(apple));
+    }
+
+    @Test
+    void shouldRejectCorruptedTraderFile()
+            throws IOException {
+
+        TraderPersistenceService persistenceService =
+                new TraderPersistenceService(tempDir.toString());
+
+        MarketService marketService = new MarketService();
+        marketService.initializeMarket();
+
+        Stock apple = marketService.requireStock("AAPL");
+
+        String fileContents =
+                "123456\n"
+                        + "armine\n"
+                        + "Armine\n"
+                        + "Grigoryan\n"
+                        + "10000\n"
+                        + "test-hash\n"
+                        + "AAPL,Apple,220.5,3\n"
+                        + "INVALID PORTFOLIO RECORD\n";
+
+        Files.writeString(
+                tempDir.resolve("armine.txt"),
+                fileContents,
+                StandardCharsets.UTF_8
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> persistenceService.loadTrader(
+                        "armine",
+                        marketService
+                )
+        );
+
+        // The market itself must remain unchanged.
+        assertSame(apple, marketService.requireStock("AAPL"));
+        assertEquals(5, marketService.getAllStocks().size());
+    }
+
 }

@@ -10,6 +10,9 @@ import java.util.function.Consumer;
 
 public class LoginPanel extends JPanel {
     public LoginPanel(TraderService traderService, Consumer<Trader> onLoginSuccess, Runnable onBack) {
+        if (traderService == null || onLoginSuccess == null || onBack == null)
+            throw new IllegalArgumentException("Login panel dependencies cannot be null.");
+
         setLayout(new GridBagLayout());
 
         JPanel loginPanel = new JPanel();
@@ -47,7 +50,6 @@ public class LoginPanel extends JPanel {
         // Buttons
         JButton loginButton = new JButton("Login");
         JButton backButton = new JButton("Back");
-
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
 
         buttonPanel.add(loginButton);
@@ -56,31 +58,21 @@ public class LoginPanel extends JPanel {
         // Login functionality
         loginButton.addActionListener(e -> {
             errorLabel.setText(" ");
-
             String username = usernameField.getText().trim();
             char[] password = passwordField.getPassword();
-
+            Trader trader;
             try {
-                if (username.isEmpty() || password.length == 0) {
-                    errorLabel.setText("Please enter your username and password.");
-                    return;
-                }
-
-                Trader trader = traderService.login(username, password);
-
-                if (trader == null) {
-                    errorLabel.setText("Invalid username or password.");
-                    passwordField.setText("");
-                } else {
-                    onLoginSuccess.accept(trader);
-                }
+                trader = traderService.login(username, password);
             } catch (IllegalArgumentException ex) {
                 errorLabel.setText(ex.getMessage());
-
+                return;
             } finally {
                 Arrays.fill(password, '\0');
+                passwordField.setText("");
             }
+            onLoginSuccess.accept(trader);
         });
+
 
         // Back navigation
         backButton.addActionListener(e -> onBack.run());

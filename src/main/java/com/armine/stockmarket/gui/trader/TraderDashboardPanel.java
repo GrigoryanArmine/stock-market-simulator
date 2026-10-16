@@ -7,14 +7,9 @@ import java.awt.*;
 import java.util.Locale;
 
 public class TraderDashboardPanel extends JPanel {
-
-    public TraderDashboardPanel(
-            Trader trader,
-            boolean newAccount,
-            Runnable onMarket,
-            Runnable onPortfolio,
-            Runnable onTransactions,
-            Runnable onLogout) {
+    public TraderDashboardPanel(Trader trader, boolean newAccount, Runnable onMarket, Runnable onPortfolio, Runnable onTransactions, Runnable onLogout) {
+        if (trader == null || onMarket == null || onPortfolio == null || onTransactions == null || onLogout == null)
+            throw new IllegalArgumentException("Trader and navigation callbacks cannot be null.");
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
@@ -32,8 +27,7 @@ public class TraderDashboardPanel extends JPanel {
         // Trader information
         JLabel nameLabel = new JLabel("Welcome, " + trader.getFullName() + "!");
         JLabel usernameLabel = new JLabel("Username: @" + trader.getUsername());
-        JLabel balanceLabel = new JLabel("Balance: $" + String.format(Locale.US, "%.2f", trader.getBalance())
-        );
+        JLabel balanceLabel = new JLabel("Available balance: $" + String.format(Locale.US, "%.2f", trader.getBalance()));
 
         // Navigation buttons
         JButton marketButton = new JButton("View Market");
@@ -41,24 +35,27 @@ public class TraderDashboardPanel extends JPanel {
         JButton transactionsButton = new JButton("Transactions");
         JButton logoutButton = new JButton("Logout");
 
+        // Consistent button sizes
+        Dimension buttonSize = new Dimension(180, 35);
+        JButton[] buttons = {marketButton, portfolioButton, transactionsButton, logoutButton};
+        for (JButton button : buttons) {
+            button.setPreferredSize(buttonSize);
+            button.setMaximumSize(buttonSize);
+            button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        }
+
         // Button actions
         marketButton.addActionListener(e -> onMarket.run());
         portfolioButton.addActionListener(e -> onPortfolio.run());
         transactionsButton.addActionListener(e -> onTransactions.run());
         logoutButton.addActionListener(e -> onLogout.run());
 
-        // Center components
+        // Center labels
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         successLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         usernameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         balanceLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-
-        marketButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        portfolioButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        transactionsButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        logoutButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Build dashboard
         add(Box.createVerticalStrut(40));

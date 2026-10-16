@@ -3,7 +3,6 @@ package com.armine.stockmarket.model;
 import java.time.LocalDateTime;
 
 public class Transaction {
-
     private Stock stock;
     private int quantity;
     private double pricePerShare;
@@ -15,22 +14,18 @@ public class Transaction {
     }
 
     public Transaction(Stock stock, int quantity, double pricePerShare, TransactionType type, LocalDateTime dateTime) {
-        if (stock == null) {
+        if (stock == null)
             throw new IllegalArgumentException("Stock cannot be null.");
-        }
-
-        if (quantity <= 0) {
+        if (quantity <= 0)
             throw new IllegalArgumentException("Quantity must be greater than zero.");
-        }
-        if (pricePerShare <= 0) {
-            throw new IllegalArgumentException("Price must be greater than zero.");
-        }
-        if (type == null) {
+        if (!Double.isFinite(pricePerShare) || pricePerShare <= 0)
+            throw new IllegalArgumentException("Price must be a finite, positive number.");
+        if (!Double.isFinite(pricePerShare * quantity))
+            throw new IllegalArgumentException("Transaction amount is too large.");
+        if (type == null)
             throw new IllegalArgumentException("Transaction type cannot be null.");
-        }
-        if (dateTime == null) {
+        if (dateTime == null)
             throw new IllegalArgumentException("Date and time cannot be null.");
-        }
 
         this.stock = stock;
         this.quantity = quantity;
@@ -39,6 +34,15 @@ public class Transaction {
         this.dateTime = dateTime;
     }
 
+    public Transaction(Transaction other) {
+        if (other == null) throw new IllegalArgumentException("Transaction cannot be null.");
+
+        this.stock = other.stock;
+        this.quantity = other.quantity;
+        this.pricePerShare = other.pricePerShare;
+        this.type = other.type;
+        this.dateTime = other.dateTime;
+    }
     public Stock getStock() {
         return stock;
     }

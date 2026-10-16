@@ -1,14 +1,12 @@
 package com.armine.stockmarket.gui.trader;
 
-import com.armine.stockmarket.model.Stock;
-import com.armine.stockmarket.model.Trader;
-import com.armine.stockmarket.service.MarketService;
-import com.armine.stockmarket.service.TradingService;
-import com.armine.stockmarket.service.TraderPersistenceService;
-import com.armine.stockmarket.service.TransactionService;
+import com.armine.stockmarket.model.*;
+import com.armine.stockmarket.service.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -23,6 +21,9 @@ public class MarketPanel extends JPanel {
             Runnable onBack,
             Runnable onRefresh) {
 
+        if (trader == null || marketService == null || tradingService == null || traderPersistenceService == null || transactionService == null || onBack == null || onRefresh == null)
+            throw new IllegalArgumentException("Market panel dependencies cannot be null.");
+
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         // Title and balance
@@ -31,8 +32,9 @@ public class MarketPanel extends JPanel {
 
         // Market table
         String[] columnNames = {"Symbol", "Company", "Price"};
+        List<Stock> stocks = new ArrayList<>(marketService.getAllStocks());
+        stocks.sort(Comparator.comparing(Stock::getSymbol));
 
-        List<Stock> stocks = marketService.getAllStocks();
         Object[][] data = new Object[stocks.size()][3];
 
         for (int i = 0; i < stocks.size(); i++) {
@@ -41,7 +43,6 @@ public class MarketPanel extends JPanel {
             data[i][1] = stock.getCompanyName();
             data[i][2] = "$" + String.format(Locale.US, "%.2f", stock.getCurrentPrice());
         }
-
         JTable stockTable = new JTable(data, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -49,7 +50,6 @@ public class MarketPanel extends JPanel {
             }
         };
         stockTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
         JScrollPane scrollPane = new JScrollPane(stockTable);
 
         // Buttons
@@ -58,6 +58,12 @@ public class MarketPanel extends JPanel {
 
         JLabel errorLabel = new JLabel(" ");
         errorLabel.setForeground(Color.RED);
+
+        // Disable buying when the market is empty
+        if (stocks.isEmpty()) {
+            buyButton.setEnabled(false);
+            errorLabel.setText("No stocks available.");
+        }
 
         // Back to Trader Dashboard
         backButton.addActionListener(e -> onBack.run());
@@ -69,17 +75,19 @@ public class MarketPanel extends JPanel {
                 errorLabel.setText("Please select a stock first.");
                 return;
             }
-
             errorLabel.setText(" ");
-
             int modelRow = stockTable.convertRowIndexToModel(selectedRow);
-
             Stock selectedStock = stocks.get(modelRow);
-
-            BuyStockDialog dialog = new BuyStockDialog(parent, selectedStock, trader, tradingService, traderPersistenceService, transactionService);
+            BuyStockDialog dialog = new BuyStockDialog(
+                    parent,
+                    selectedStock,
+                    trader,
+                    tradingService,
+                    traderPersistenceService,
+                    transactionService
+            );
             dialog.setVisible(true);
-
-            // Refresh after closing the dialog
+            // Refresh market after closing the dialog
             onRefresh.run();
         });
 

@@ -55,7 +55,7 @@ class TradingServiceTest {
 
     @Test
     void shouldSellStockSuccessfully() throws InsufficientSharesException {
-        trader.getPortfolio().addStock(stock, 5);
+        trader.addShares(stock, 5);
 
         tradingService.sellStock(trader, stock, 2);
 
@@ -66,7 +66,7 @@ class TradingServiceTest {
 
     @Test
     void shouldRejectSellWhenInsufficientShares() {
-        trader.getPortfolio().addStock(stock, 2);
+        trader.addShares(stock, 2);
 
         assertThrows(
                 InsufficientSharesException.class,

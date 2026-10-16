@@ -1,17 +1,9 @@
 package com.armine.stockmarket.ui;
 
-import com.armine.stockmarket.model.Trader;
-import com.armine.stockmarket.service.MarketService;
-import com.armine.stockmarket.service.TraderPersistenceService;
-import com.armine.stockmarket.service.TraderService;
-import com.armine.stockmarket.service.TradingService;
-import com.armine.stockmarket.service.TransactionService;
-import com.armine.stockmarket.model.Admin;
-import com.armine.stockmarket.service.AdminService;
-import com.armine.stockmarket.service.PasswordService;
+import com.armine.stockmarket.model.*;
+import com.armine.stockmarket.service.*;
 
 import java.util.Arrays;
-
 import java.util.Scanner;
 
 public class MainMenuUI {
@@ -22,16 +14,11 @@ public class MainMenuUI {
     private TradingService tradingService;
     private TransactionService transactionService;
     private Scanner scanner;
-    private Admin admin;
 
-    public MainMenuUI(
-            TraderService traderService,
-            AdminService adminService,
-            TraderPersistenceService traderPersistenceService,
-            MarketService marketService,
-            TradingService tradingService,
-            TransactionService transactionService,
-            Admin admin) {
+    public MainMenuUI(TraderService traderService, AdminService adminService, TraderPersistenceService traderPersistenceService, MarketService marketService, TradingService tradingService, TransactionService transactionService) {
+        if (traderService == null || adminService == null || traderPersistenceService == null || marketService == null || tradingService == null || transactionService == null)
+            throw new IllegalArgumentException("Main menu dependencies cannot be null.");
+
         this.traderService = traderService;
         this.adminService = adminService;
         this.traderPersistenceService = traderPersistenceService;
@@ -39,7 +26,6 @@ public class MainMenuUI {
         this.tradingService = tradingService;
         this.transactionService = transactionService;
         this.scanner = new Scanner(System.in);
-        this.admin = admin;
     }
 
     public void showMenu() {
@@ -55,47 +41,8 @@ public class MainMenuUI {
         System.out.print("Choose an option: ");
     }
 
-    private void createAccount() {
-        System.out.println();
-
-        System.out.print("Enter first name: ");
-        String firstName = scanner.nextLine().trim();
-
-        System.out.print("Enter surname: ");
-        String surname = scanner.nextLine().trim();
-
-        System.out.print("Choose a username: ");
-        String username = scanner.nextLine().trim();
-
-        System.out.print("Choose a password: ");
-        char[] password = scanner.nextLine().toCharArray();
-
-        System.out.print("Confirm password: ");
-        char[] confirmPassword = scanner.nextLine().toCharArray();
-
-        try {
-            if (!Arrays.equals(password, confirmPassword))
-                throw new IllegalArgumentException("Passwords do not match.");
-
-            Trader trader = traderService.createTrader(firstName, surname, username, password);
-            traderPersistenceService.saveTrader(trader);
-
-            System.out.println("Account created successfully!");
-            System.out.println("Trader ID: " + trader.getId());
-            System.out.println("Username: " + trader.getUsername());
-
-        } catch (IllegalArgumentException | IllegalStateException ex) {
-            System.out.println(ex.getMessage());
-
-        } finally {
-            Arrays.fill(password, '\0');
-            Arrays.fill(confirmPassword, '\0');
-        }
-    }
-
     public void start() {
         boolean running = true;
-
         while (running) {
             showMenu();
             String input = scanner.nextLine();
@@ -115,9 +62,9 @@ public class MainMenuUI {
             }
         }
     }
+
     private void showTraderMenu() {
         boolean running = true;
-
         while (running) {
             System.out.println();
             System.out.println("==============================");
@@ -129,7 +76,6 @@ public class MainMenuUI {
             System.out.println("3. Back");
             System.out.println();
             System.out.print("Choose an option: ");
-
             String input = scanner.nextLine();
             switch (input) {
                 case "1":
@@ -150,19 +96,54 @@ public class MainMenuUI {
             }
         }
     }
+
+    private void createAccount() {
+        System.out.println();
+        System.out.print("Enter first name: ");
+        String firstName = scanner.nextLine().trim();
+        System.out.print("Enter surname: ");
+        String surname = scanner.nextLine().trim();
+        System.out.print("Choose a username: ");
+        String username = scanner.nextLine().trim();
+        System.out.print("Choose a password: ");
+        char[] password = scanner.nextLine().toCharArray();
+        System.out.print("Confirm password: ");
+        char[] confirmPassword = scanner.nextLine().toCharArray();
+
+        try {
+            if (!Arrays.equals(password, confirmPassword)) {
+                System.out.println("Passwords do not match.");
+                return;
+            }
+            Trader trader = traderService.createTrader(firstName, surname, username, password);
+            try {
+                traderPersistenceService.saveTrader(trader);
+            } catch (IllegalStateException ex) {
+                System.out.println("Account created in memory, but saving failed: " + ex.getMessage());
+                return;
+            }
+            System.out.println("Account created successfully!");
+            System.out.println("Trader ID: " + trader.getId());
+            System.out.println("Username: " + trader.getUsername()
+            );
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            System.out.println(ex.getMessage());
+        } finally {
+            Arrays.fill(password, '\0');
+            Arrays.fill(confirmPassword, '\0');
+        }
+    }
+
     private Trader login() {
         System.out.println();
         System.out.print("Enter username: ");
         String username = scanner.nextLine().trim();
-
         System.out.print("Enter password: ");
         char[] password = scanner.nextLine().toCharArray();
-
         try {
             Trader trader = traderService.login(username, password);
             System.out.println("Welcome, " + trader.getFirstName() + "!");
             return trader;
-
         } catch (IllegalArgumentException ex) {
             System.out.println(ex.getMessage());
             return null;
@@ -170,30 +151,26 @@ public class MainMenuUI {
             Arrays.fill(password, '\0');
         }
     }
+
     private void loginAdmin() {
         System.out.println();
         System.out.println("ADMIN LOGIN");
-
         System.out.print("Enter username: ");
         String username = scanner.nextLine().trim();
-
         System.out.print("Enter password: ");
         char[] password = scanner.nextLine().toCharArray();
-
+        Admin loggedInAdmin;
         try {
-            Admin loggedInAdmin = adminService.login(username, password);
-            if (loggedInAdmin == null) {
-                System.out.println("Incorrect username or password.");
-                return;
-            }
-
-            System.out.println("Welcome, " + loggedInAdmin.getFirstName() + "!");
-
-            AdminUI adminUI = new AdminUI(loggedInAdmin, marketService, traderService);
-            adminUI.start();
-
+            loggedInAdmin = adminService.login(username, password);
         } finally {
             Arrays.fill(password, '\0');
         }
+        if (loggedInAdmin == null) {
+            System.out.println("Incorrect username or password.");
+            return;
+        }
+        System.out.println("Welcome, " + loggedInAdmin.getFirstName() + "!");
+        AdminUI adminUI = new AdminUI(loggedInAdmin, marketService, traderService);
+        adminUI.start();
     }
 }

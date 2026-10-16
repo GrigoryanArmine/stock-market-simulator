@@ -4,7 +4,10 @@ import javax.swing.*;
 import java.awt.*;
 
 public class AdminDashboardPanel extends JPanel {
-    public AdminDashboardPanel(Runnable onManageStocks, Runnable onManageTraders, Runnable onBack) {
+    public AdminDashboardPanel(Runnable onManageStocks, Runnable onManageTraders, Runnable onLogout) {
+        if (onManageStocks == null || onManageTraders == null || onLogout == null)
+            throw new IllegalArgumentException("Navigation callbacks cannot be null.");
+
         setLayout(new GridBagLayout());
 
         JPanel dashboardPanel = new JPanel();
@@ -14,25 +17,25 @@ public class AdminDashboardPanel extends JPanel {
 
         JButton stocksButton = new JButton("Manage Stocks");
         JButton tradersButton = new JButton("Manage Traders");
-        JButton backButton = new JButton("Back");
+        JButton logoutButton = new JButton("Logout");
 
+        // Consistent button sizes
+        Dimension buttonSize = new Dimension(180, 35);
+        JButton[] buttons = {stocksButton, tradersButton, logoutButton};
+
+        for (JButton button : buttons) {
+            button.setPreferredSize(buttonSize);
+            button.setMaximumSize(buttonSize);
+            button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        }
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        stocksButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        tradersButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        stocksButton.setPreferredSize(new Dimension(180, 35));
-        tradersButton.setPreferredSize(new Dimension(180, 35));
-        backButton.setPreferredSize(new Dimension(100, 35));
-
-        stocksButton.setMaximumSize(new Dimension(180, 35));
-        tradersButton.setMaximumSize(new Dimension(180, 35));
-        backButton.setMaximumSize(new Dimension(100, 35));
-
+        // Navigation
         stocksButton.addActionListener(e -> onManageStocks.run());
         tradersButton.addActionListener(e -> onManageTraders.run());
-        backButton.addActionListener(e -> onBack.run());
+        logoutButton.addActionListener(e -> onLogout.run());
 
+        // Build dashboard
         dashboardPanel.add(titleLabel);
 
         dashboardPanel.add(Box.createVerticalStrut(30));
@@ -42,7 +45,7 @@ public class AdminDashboardPanel extends JPanel {
         dashboardPanel.add(tradersButton);
 
         dashboardPanel.add(Box.createVerticalStrut(15));
-        dashboardPanel.add(backButton);
+        dashboardPanel.add(logoutButton);
 
         add(dashboardPanel);
     }

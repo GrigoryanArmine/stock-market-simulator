@@ -1,12 +1,12 @@
 package com.armine.stockmarket.gui.admin;
 
-import com.armine.stockmarket.model.Trader;
-import com.armine.stockmarket.model.Stock;
+import com.armine.stockmarket.model.*;
 import com.armine.stockmarket.service.TraderService;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.Locale;
 import java.util.Map;
 
 public class ManageTradersPanel extends JPanel {
@@ -16,7 +16,11 @@ public class ManageTradersPanel extends JPanel {
     private JLabel errorLabel;
 
     public ManageTradersPanel(TraderService traderService, Runnable onBack) {
+        if (traderService == null || onBack == null)
+            throw new IllegalArgumentException("Manage traders dependencies cannot be null.");
+
         this.traderService = traderService;
+
         setLayout(new BorderLayout(15, 15));
         setBorder(BorderFactory.createEmptyBorder(25, 30, 25, 30));
 
@@ -24,6 +28,7 @@ public class ManageTradersPanel extends JPanel {
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         add(titleLabel, BorderLayout.NORTH);
 
+        // Trader table
         String[] columns = {"ID", "Username", "Full Name", "Balance ($)", "Total Shares", "Portfolio Value ($)"};
 
         tableModel = new DefaultTableModel(columns, 0) {
@@ -39,11 +44,14 @@ public class ManageTradersPanel extends JPanel {
 
         add(new JScrollPane(tradersTable), BorderLayout.CENTER);
 
+        // Error label
         errorLabel = new JLabel(" ");
         errorLabel.setForeground(Color.RED);
         errorLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
+        // Buttons
         JButton viewPortfolioButton = new JButton("View Portfolio");
+
         JButton refreshButton = new JButton("Refresh");
         JButton backButton = new JButton("Back");
 
@@ -64,41 +72,34 @@ public class ManageTradersPanel extends JPanel {
 
         add(bottomPanel, BorderLayout.SOUTH);
 
+        // View portfolio
         viewPortfolioButton.addActionListener(e -> {
             int selectedRow = tradersTable.getSelectedRow();
-
             if (selectedRow == -1) {
                 showError("Please select a trader first.");
                 return;
             }
-
             int modelRow = tradersTable.convertRowIndexToModel(selectedRow);
             int traderId = (int) tableModel.getValueAt(modelRow, 0);
-
             Trader trader = traderService.findTraderById(traderId);
 
             if (trader == null) {
-                showError("Trader not found.");
+                refreshTable();
+                showError("This trader is no longer available.");
                 return;
             }
-
             clearError();
             showPortfolio(trader);
         });
 
-        refreshButton.addActionListener(e -> {
-            refreshTable();
-            clearError();
-        });
+        // Refresh
+        refreshButton.addActionListener(e -> {refreshTable();clearError();});
 
+        // Back
         backButton.addActionListener(e -> onBack.run());
 
-        tradersTable.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                clearError();
-            }
-        });
-
+        // Clear error when selection changes
+        tradersTable.getSelectionModel().addListSelectionListener(e -> {if (!e.getValueIsAdjusting()) clearError();});
         refreshTable();
     }
 
@@ -106,17 +107,19 @@ public class ManageTradersPanel extends JPanel {
         tableModel.setRowCount(0);
 
         for (Trader trader : traderService.getAllTraders()) {
-            int totalShares = 0;
-            for (int quantity : trader.getPortfolio().getHoldings().values()) {
+            Portfolio portfolio = trader.getPortfolio();
+            long totalShares = 0;
+            for (int quantity : portfolio.getHoldings().values()) {
                 totalShares += quantity;
             }
+
             tableModel.addRow(new Object[]{
                     trader.getId(),
                     trader.getUsername(),
                     trader.getFullName(),
-                    String.format("%.2f", trader.getBalance()),
+                    String.format(Locale.US, "%.2f", trader.getBalance()),
                     totalShares,
-                    String.format("%.2f", trader.getPortfolio().getTotalValue())
+                    String.format(Locale.US, "%.2f", portfolio.getTotalValue())
             });
         }
     }
@@ -126,7 +129,8 @@ public class ManageTradersPanel extends JPanel {
 
         details.append("Trader: ").append(trader.getFullName()).append("\n\n");
 
-        Map<Stock, Integer> holdings = trader.getPortfolio().getHoldings();
+        Portfolio portfolio = trader.getPortfolio();
+        Map<Stock, Integer> holdings = portfolio.getHoldings();
 
         if (holdings.isEmpty()) {
             details.append("This trader does not own any stocks.");
@@ -134,21 +138,24 @@ public class ManageTradersPanel extends JPanel {
             for (Map.Entry<Stock, Integer> entry : holdings.entrySet()) {
                 Stock stock = entry.getKey();
                 int quantity = entry.getValue();
+
                 details.append(stock.getSymbol())
                         .append(" - ")
                         .append(quantity)
                         .append(" shares")
                         .append(" - $")
-                        .append(String.format("%.2f",
-                                stock.getCurrentPrice() * quantity))
+                        .append(String.format(Locale.US, "%.2f", stock.getCurrentPrice() * quantity))
                         .append("\n");
             }
+            details.append("\nTotal portfolio value: $").append(String.format(Locale.US, "%.2f", portfolio.getTotalValue()));
         }
 
         JTextArea detailsArea = new JTextArea(details.toString());
+
         detailsArea.setEditable(false);
         detailsArea.setRows(10);
         detailsArea.setColumns(35);
+        detailsArea.setCaretPosition(0);
 
         JOptionPane.showMessageDialog(this, new JScrollPane(detailsArea), "Trader Portfolio", JOptionPane.INFORMATION_MESSAGE);
     }

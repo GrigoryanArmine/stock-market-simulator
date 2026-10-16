@@ -1,15 +1,11 @@
 package com.armine.stockmarket.ui;
 
-import com.armine.stockmarket.exception.InsufficientFundsException;
-import com.armine.stockmarket.exception.InsufficientSharesException;
-import com.armine.stockmarket.model.Stock;
-import com.armine.stockmarket.model.Trader;
-import com.armine.stockmarket.service.MarketService;
-import com.armine.stockmarket.service.TradingService;
-import com.armine.stockmarket.service.TraderPersistenceService;
-import com.armine.stockmarket.service.TransactionService;
+import com.armine.stockmarket.exception.*;
+import com.armine.stockmarket.model.*;
+import com.armine.stockmarket.service.*;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
 
@@ -22,13 +18,17 @@ public class ConsoleUI {
     private TransactionService transactionService;
 
     public ConsoleUI(Trader trader, MarketService marketService, TradingService tradingService, TraderPersistenceService traderPersistenceService, TransactionService transactionService) {
+        if (trader == null || marketService == null || tradingService == null || traderPersistenceService == null || transactionService == null)
+            throw new IllegalArgumentException("Console UI dependencies cannot be null.");
+
         this.trader = trader;
         this.marketService = marketService;
         this.tradingService = tradingService;
-        this.scanner = new Scanner(System.in);
         this.traderPersistenceService = traderPersistenceService;
         this.transactionService = transactionService;
+        this.scanner = new Scanner(System.in);
     }
+
     public void start() {
         boolean running = true;
         while (running) {
@@ -54,11 +54,11 @@ public class ConsoleUI {
                     addMoney();
                     break;
                 case 7:
-                    traderPersistenceService.saveTrader(trader);
-                    transactionService.saveTransactions(trader);
-                    running = false;
-                    System.out.println("Your data has been saved.");
-                    System.out.println("Logged out successfully.");
+                    if (saveChanges()) {
+                        running = false;
+                        System.out.println("Your data has been saved.");
+                        System.out.println("Logged out successfully.");
+                    }
                     break;
                 default:
                     System.out.println("Invalid option.");
@@ -67,7 +67,6 @@ public class ConsoleUI {
     }
 
     private void showMenu() {
-
         System.out.println();
         System.out.println("==============================");
         System.out.println("   STOCK MARKET SIMULATOR");
@@ -85,11 +84,16 @@ public class ConsoleUI {
         System.out.println();
         System.out.print("Choose an option: ");
     }
+
     private void showStocks() {
         System.out.println();
         System.out.println("Available stocks:");
-
         List<Stock> stocks = marketService.getAllStocks();
+        if (stocks.isEmpty()) {
+            System.out.println("No stocks available.");
+            return;
+        }
+        stocks.sort(Comparator.comparing(Stock::getSymbol));
         for (Stock stock : stocks) {
             System.out.println(stock);
         }
@@ -97,83 +101,62 @@ public class ConsoleUI {
 
     private void buyStock() {
         System.out.println();
-        System.out.println("Available stocks:");
-
-        List<Stock> stocks = marketService.getAllStocks();
-
-        for (Stock stock : stocks) {
-            System.out.println(stock);
-        }
-
-        System.out.println();
-
-        System.out.print("Enter stock symbol: ");
-        String symbol = scanner.nextLine();
-
-        Stock stock = marketService.findStock(symbol);
-
-        if (stock == null) {
-            System.out.println("Stock not found.");
+        if (marketService.getAllStocks().isEmpty()) {
+            System.out.println("No stocks available.");
             return;
         }
-        System.out.print("Enter quantity: ");
-        int quantity = readInteger();
+        showStocks();
+
+        System.out.println();
+        System.out.print("Enter stock symbol: ");
+        String symbol = scanner.nextLine().trim();
         try {
+            Stock stock = marketService.requireStock(symbol);
+            System.out.print("Enter quantity: ");
+            int quantity = readInteger();
             tradingService.buyStock(trader, stock, quantity);
             System.out.println("Purchase successful.");
-
-        } catch (IllegalArgumentException | InsufficientFundsException e) {
-            System.out.println("Purchase failed: " + e.getMessage());
+            saveChanges();
+        } catch (IllegalArgumentException | InsufficientFundsException ex) {
+            System.out.println(ex.getMessage());
         }
     }
 
     private void sellStock() {
         System.out.println();
         System.out.println("Your Portfolio:");
-
-        if (trader.getPortfolio().isEmpty()) {
+        Portfolio portfolio = trader.getPortfolio();
+        if (portfolio.isEmpty()) {
             System.out.println("Your portfolio is empty.");
             return;
         }
-
-        List<Stock> stocks = new ArrayList<>();
-        for (Stock stock : trader.getPortfolio().getHoldings().keySet()) {
-            stocks.add(stock);
-        }
+        List<Stock> stocks = new ArrayList<>(portfolio.getHoldings().keySet());
+        stocks.sort(Comparator.comparing(Stock::getSymbol));
         for (int i = 0; i < stocks.size(); i++) {
             Stock stock = stocks.get(i);
-            int quantity = trader.getPortfolio().getQuantity(stock);
-
+            int quantity = portfolio.getQuantity(stock);
             System.out.println((i + 1) + ". " + stock.getSymbol() + " - " + quantity + " shares");
         }
         System.out.println();
         System.out.print("Choose a stock to sell: ");
         int choice = readInteger();
-
         if (choice < 1 || choice > stocks.size()) {
             System.out.println("Invalid stock selection.");
             return;
         }
-
         Stock stock = stocks.get(choice - 1);
-
-        int ownedShares = trader.getPortfolio().getQuantity(stock);
-
+        int ownedShares = trader.getOwnedShares(stock);
         System.out.println();
         System.out.println("You selected: " + stock.getSymbol());
-
         System.out.println("You own " + ownedShares + " shares.");
-
         System.out.print("Enter quantity to sell: ");
         int quantity = readInteger();
-
         try {
-
             tradingService.sellStock(trader, stock, quantity);
             System.out.println("Sale successful.");
-
-        } catch (IllegalArgumentException | InsufficientSharesException e) {
-            System.out.println("Sale failed: " + e.getMessage());
+            saveChanges();
+        } catch (IllegalArgumentException | InsufficientSharesException ex) {
+            System.out.println(ex.getMessage());
         }
     }
 
@@ -185,30 +168,44 @@ public class ConsoleUI {
     private void showTransactions() {
         System.out.println();
         System.out.println("Transactions:");
-
-        if (trader.getTransactions().isEmpty()) {
+        List<Transaction> transactions = trader.getTransactions();
+        if (transactions.isEmpty()) {
             System.out.println("No transactions yet.");
             return;
         }
-        for (int i = 0; i < trader.getTransactions().size(); i++) {
-            System.out.println(trader.getTransactions().get(i));
+        for (Transaction transaction : transactions) {
+            System.out.println(transaction);
         }
     }
 
     private void addMoney() {
+        System.out.println();
         System.out.print("Enter amount: ");
         double amount = readDouble();
         try {
             trader.addMoney(amount);
             System.out.println("Money added successfully.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Could not add money: " + e.getMessage());
+            saveChanges();
+        } catch (IllegalArgumentException ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    private boolean saveChanges() {
+        try {
+            traderPersistenceService.saveTrader(trader);
+            transactionService.saveTransactions(trader);
+            return true;
+
+        } catch (IllegalStateException ex) {
+            System.out.println("Changes are in memory, but saving failed: " + ex.getMessage());
+            return false;
         }
     }
 
     private int readInteger() {
         while (!scanner.hasNextInt()) {
-            System.out.println("Invalid input. Please enter a number.");
+            System.out.println("Invalid input. Please enter an integer.");
             scanner.nextLine();
             System.out.print("Try again: ");
         }
@@ -219,13 +216,11 @@ public class ConsoleUI {
     }
 
     private double readDouble() {
-
         while (!scanner.hasNextDouble()) {
             System.out.println("Invalid input. Please enter a number.");
             scanner.nextLine();
             System.out.print("Try again: ");
         }
-
         double number = scanner.nextDouble();
         scanner.nextLine();
         return number;

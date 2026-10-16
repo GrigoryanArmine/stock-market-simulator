@@ -1,4 +1,3 @@
-
 package com.armine.stockmarket.gui;
 
 import javax.swing.*;
@@ -7,7 +6,6 @@ import java.awt.*;
 public class MainMenuPanel extends JPanel {
 
     public MainMenuPanel(Runnable onTrader, Runnable onAdmin, Runnable onExit) {
-
         setLayout(new GridBagLayout());
 
         JPanel menuPanel = new JPanel();

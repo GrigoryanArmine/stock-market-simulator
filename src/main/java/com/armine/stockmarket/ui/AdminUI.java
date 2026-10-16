@@ -1,11 +1,10 @@
 package com.armine.stockmarket.ui;
 
-import com.armine.stockmarket.model.Admin;
-import com.armine.stockmarket.service.MarketService;
-import com.armine.stockmarket.service.TraderService;
-import com.armine.stockmarket.model.Stock;
-import com.armine.stockmarket.model.Trader;
+import com.armine.stockmarket.model.*;
+import com.armine.stockmarket.service.*;
 
+import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 
 public class AdminUI {
@@ -15,6 +14,8 @@ public class AdminUI {
     private Scanner scanner;
 
     public AdminUI(Admin admin, MarketService marketService, TraderService traderService) {
+        if (admin == null || marketService == null || traderService == null)
+            throw new IllegalArgumentException("Admin UI dependencies cannot be null.");
         this.admin = admin;
         this.marketService = marketService;
         this.traderService = traderService;
@@ -37,6 +38,7 @@ public class AdminUI {
         System.out.println();
         System.out.print("Choose an option: ");
     }
+
     public void start() {
         boolean running = true;
         while (running) {
@@ -67,117 +69,104 @@ public class AdminUI {
             }
         }
     }
+
     private void showStocks() {
         System.out.println();
         System.out.println("Available stocks:");
-        for (Stock stock : marketService.getAllStocks()) {
-            System.out.println(stock.getSymbol()
-                            + " - "
-                            + stock.getCompanyName()
-                            + " - $"
-                            + stock.getCurrentPrice()
-            );
+        List<Stock> stocks = marketService.getAllStocks();
+
+        if (stocks.isEmpty()) {
+            System.out.println("No stocks available.");
+            return;
+        }
+        for (Stock stock : stocks) {
+            System.out.println(stock.getSymbol() + " - " + stock.getCompanyName() + " - $" + String.format(Locale.US, "%.2f", stock.getCurrentPrice()));
         }
     }
+
     private void addStock() {
         System.out.println();
         System.out.println("Add new stock:");
 
         System.out.print("Enter stock symbol: ");
-        String symbol = scanner.nextLine().trim().toUpperCase();
+        String symbol = scanner.nextLine().trim();
 
-        if (symbol.isBlank()) {
-            System.out.println("Stock symbol cannot be empty.");
-            return;
-        }
-        if (marketService.findStock(symbol) != null) {
-            System.out.println("Stock already exists.");
-            return;
-        }
         System.out.print("Enter company name: ");
         String companyName = scanner.nextLine().trim();
 
-        if (companyName.isBlank()) {
-            System.out.println("Company name cannot be empty.");
-            return;
-        }
         System.out.print("Enter stock price: ");
+        String priceInput = scanner.nextLine().trim();
 
         try {
-            double price = Double.parseDouble(scanner.nextLine());
+            double price = Double.parseDouble(priceInput);
             Stock stock = new Stock(symbol, companyName, price);
-            admin.addStockToMarket(stock, marketService);
+            marketService.addStock(stock);
             System.out.println("Stock added successfully.");
         } catch (NumberFormatException e) {
-            System.out.println("Please enter a valid price.");
-        } catch (IllegalArgumentException e) {
+            System.out.println("Please enter a valid numeric price.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println(e.getMessage());
         }
     }
+
     private void updateStockPrice() {
         System.out.println();
         System.out.println("Update stock price:");
         showStocks();
         System.out.print("Enter stock symbol: ");
-        String symbol = scanner.nextLine().trim().toUpperCase();
+        String symbol = scanner.nextLine().trim();
 
-        if (symbol.isBlank()) {
-            System.out.println("Stock symbol cannot be empty.");
-            return;
-        }
-        if (marketService.findStock(symbol) == null) {
-            System.out.println("Stock not found.");
-            return;
-        }
         System.out.print("Enter new price: ");
+        String priceInput = scanner.nextLine().trim();
 
         try {
-            double newPrice = Double.parseDouble(scanner.nextLine());
+            double newPrice = Double.parseDouble(priceInput);
             marketService.updatePrice(symbol, newPrice);
             System.out.println("Stock price updated successfully.");
         } catch (NumberFormatException e) {
-            System.out.println("Please enter a valid price.");
-        } catch (IllegalArgumentException e) {
+            System.out.println("Please enter a valid numeric price.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println(e.getMessage());
         }
     }
+
     private void removeStock() {
         System.out.println();
         System.out.println("Remove stock:");
         showStocks();
         System.out.print("Enter stock symbol: ");
-        String symbol = scanner.nextLine().trim().toUpperCase();
+        String symbol = scanner.nextLine().trim();
 
-        if (symbol.isBlank()) {
-            System.out.println("Stock symbol cannot be empty.");
-            return;
-        }
-        if (marketService.findStock(symbol) == null) {
-            System.out.println("Stock not found.");
-            return;
-        }
         try {
             marketService.removeStock(symbol, traderService);
             System.out.println("Stock removed successfully.");
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println(e.getMessage());
         }
     }
+
     private void showTraders() {
         System.out.println();
         System.out.println("Registered traders:");
-
-        if (traderService.getAllTraders().isEmpty()) {
+        List<Trader> traders = traderService.getAllTraders();
+        if (traders.isEmpty()) {
             System.out.println("No traders registered.");
             return;
         }
-        for (Trader trader : traderService.getAllTraders()) {
-            System.out.println("ID: " + trader.getId()
-                            + " | Username: " + trader.getUsername()
-                            + " | Name: " + trader.getFullName()
-                            + " | Balance: $" + trader.getBalance()
+        for (Trader trader : traders) {
+            System.out.println(
+                    "ID: " + trader.getId()
+                            + " | Username: "
+                            + trader.getUsername()
+                            + " | Name: "
+                            + trader.getFullName()
+                            + " | Balance: $"
+                            + String.format(
+                            Locale.US,
+                            "%.2f",
+                            trader.getBalance()
+                    )
             );
         }
     }
-
 }

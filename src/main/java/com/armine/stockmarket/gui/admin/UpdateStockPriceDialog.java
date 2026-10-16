@@ -1,4 +1,3 @@
-
 package com.armine.stockmarket.gui.admin;
 
 import com.armine.stockmarket.model.Stock;
@@ -11,19 +10,16 @@ import java.awt.*;
 import java.util.Locale;
 
 public class UpdateStockPriceDialog extends JDialog {
+    private MarketService marketService;
+    private Stock stock;
+    private JTextField priceField;
+    private JLabel errorLabel;
 
-    private final MarketService marketService;
-    private final Stock stock;
-    private final JTextField priceField;
-    private final JLabel errorLabel;
-
-    public UpdateStockPriceDialog(
-            JFrame parent,
-            MarketService marketService,
-            Stock stock,
-            Runnable onPriceUpdated) {
-
+    public UpdateStockPriceDialog(JFrame parent, MarketService marketService, Stock stock, Runnable onPriceUpdated) {
         super(parent, "Update Stock Price", true);
+
+        if (marketService == null || stock == null || onPriceUpdated == null)
+            throw new IllegalArgumentException("Update stock price dependencies cannot be null.");
 
         this.marketService = marketService;
         this.stock = stock;
@@ -39,14 +35,9 @@ public class UpdateStockPriceDialog extends JDialog {
 
         JLabel titleLabel = new JLabel("UPDATE STOCK PRICE");
 
-        JLabel stockLabel = new JLabel(
-                stock.getSymbol() + " - " + stock.getCompanyName()
-        );
+        JLabel stockLabel = new JLabel(stock.getSymbol() + " - " + stock.getCompanyName());
 
-        JLabel currentPriceLabel = new JLabel(
-                "Current price: $" +
-                        String.format(Locale.US, "%.2f", stock.getCurrentPrice())
-        );
+        JLabel currentPriceLabel = new JLabel("Current price: $" + String.format(Locale.US, "%.2f", stock.getCurrentPrice()));
 
         JLabel priceLabel = new JLabel("New Price ($)");
 
@@ -59,35 +50,32 @@ public class UpdateStockPriceDialog extends JDialog {
         JButton updateButton = new JButton("Update Price");
         JButton cancelButton = new JButton("Cancel");
 
-        JComponent[] components = {
-                titleLabel, stockLabel, currentPriceLabel,
-                priceLabel, priceField, errorLabel,
-                updateButton, cancelButton
-        };
+        JComponent[] components = {titleLabel, stockLabel, currentPriceLabel, priceLabel, priceField, errorLabel, updateButton, cancelButton};
 
         for (JComponent component : components) {
             component.setAlignmentX(Component.CENTER_ALIGNMENT);
         }
 
-        priceField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                validatePrice();
-            }
+        // Real-time price validation
+        priceField.getDocument().addDocumentListener(
+                new DocumentListener() {
+                    @Override
+                    public void insertUpdate(DocumentEvent e) {
+                        validatePrice();
+                    }
+                    @Override
+                    public void removeUpdate(DocumentEvent e) {
+                        validatePrice();
+                    }
+                    @Override
+                    public void changedUpdate(DocumentEvent e) {
+                        validatePrice();
+                    }
+                }
+        );
 
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                validatePrice();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                validatePrice();
-            }
-        });
-
+        // Update stock price
         updateButton.addActionListener(e -> {
-
             String input = priceField.getText().trim();
 
             if (input.isEmpty()) {
@@ -95,26 +83,28 @@ public class UpdateStockPriceDialog extends JDialog {
                 return;
             }
 
-            if (!validatePrice()) {
-                return;
-            }
-
             try {
                 double newPrice = Double.parseDouble(input);
-
                 marketService.updatePrice(stock.getSymbol(), newPrice);
-
-                onPriceUpdated.run();
-                dispose();
-
-            } catch (IllegalArgumentException ex) {
+            } catch (NumberFormatException ex) {
+                errorLabel.setText("Please enter a valid numeric price.");
+                return;
+            } catch (IllegalArgumentException | IllegalStateException ex) {
                 errorLabel.setText(ex.getMessage());
+                currentPriceLabel.setText("Current price: $" + String.format(Locale.US, "%.2f", stock.getCurrentPrice()));
+                return;
             }
+            onPriceUpdated.run();
+            dispose();
         });
 
+        // Cancel
         cancelButton.addActionListener(e -> dispose());
+
+        // Enter key
         priceField.addActionListener(e -> updateButton.doClick());
 
+        // Build form
         formPanel.add(titleLabel);
 
         formPanel.add(Box.createVerticalStrut(15));
@@ -141,22 +131,25 @@ public class UpdateStockPriceDialog extends JDialog {
         panel.add(formPanel);
         add(panel);
     }
-    private boolean validatePrice() {
+
+    private void validatePrice() {
         String input = priceField.getText().trim();
         if (input.isEmpty()) {
-            errorLabel.setText(" ");
-            return false;
+            clearError();
+            return;
         }
         try {
             double price = Double.parseDouble(input);
             Stock.validatePrice(price);
-            errorLabel.setText(" ");
-            return true;
+            clearError();
         } catch (NumberFormatException ex) {
             errorLabel.setText("Please enter a valid numeric price.");
         } catch (IllegalArgumentException ex) {
             errorLabel.setText(ex.getMessage());
         }
-        return false;
+    }
+
+    private void clearError() {
+        errorLabel.setText(" ");
     }
 }

@@ -12,13 +12,16 @@ import java.util.List;
 import java.util.Locale;
 
 public class ManageStocksPanel extends JPanel {
-    private final MarketService marketService;
-    private final TraderService traderService;
-    private final DefaultTableModel tableModel;
-    private final JTable stocksTable;
-    private final JLabel errorLabel;
+    private MarketService marketService;
+    private TraderService traderService;
+    private DefaultTableModel tableModel;
+    private JTable stocksTable;
+    private JLabel errorLabel;
 
     public ManageStocksPanel(MarketService marketService, TraderService traderService, Runnable onBack) {
+        if (marketService == null || traderService == null || onBack == null)
+            throw new IllegalArgumentException("Manage stocks dependencies cannot be null.");
+
         this.marketService = marketService;
         this.traderService = traderService;
 
@@ -74,39 +77,33 @@ public class ManageStocksPanel extends JPanel {
 
         add(bottomPanel, BorderLayout.SOUTH);
 
-        // Add Stock
+        // Add stock
         addButton.addActionListener(e -> {
             clearError();
             JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
-            AddStockDialog dialog = new AddStockDialog(parent, marketService, ()-> refreshTable());
+            AddStockDialog dialog = new AddStockDialog(parent, marketService, this::refreshTable);
             dialog.setVisible(true);
         });
 
-        // Update Stock Price
+        // Update stock price
         updateButton.addActionListener(e -> {
-
             String symbol = getSelectedSymbol();
-
             if (symbol == null) {
                 showError("Please select a stock first.");
                 return;
             }
-            Stock stock = marketService.findStock(symbol);
-
-            if (stock == null) {
-                showError("Stock not found.");
-                return;
+            try {
+                Stock stock = marketService.requireStock(symbol);
+                clearError();
+                JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
+                UpdateStockPriceDialog dialog = new UpdateStockPriceDialog(parent, marketService, stock, this::refreshTable);
+                dialog.setVisible(true);
+            } catch (IllegalArgumentException ex) {
+                showError(ex.getMessage());
             }
-
-            clearError();
-            JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
-
-            UpdateStockPriceDialog dialog = new UpdateStockPriceDialog(parent, marketService, stock, () -> refreshTable());
-            dialog.setVisible(true);
         });
 
-
-        // Remove Stock
+        // Remove stock
         removeButton.addActionListener(e -> {
             String symbol = getSelectedSymbol();
             if (symbol == null) {
@@ -114,47 +111,40 @@ public class ManageStocksPanel extends JPanel {
                 return;
             }
             clearError();
-
-            // Ask the Admin for confirmation
-            int choice = JOptionPane.showConfirmDialog(this, "Are you sure you want to remove " + symbol + " from the market?", "Confirm Stock Removal", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-
-            // Cancel removal if Admin chooses No or closes dialog
-            if (choice != JOptionPane.YES_OPTION) {
-                return;
-            }
+            int choice = JOptionPane.showConfirmDialog(
+                    this,
+                    "Are you sure you want to remove "
+                            + symbol + " from the market?",
+                    "Confirm Stock Removal",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+            if (choice != JOptionPane.YES_OPTION) return;
             try {
                 marketService.removeStock(symbol, traderService);
                 refreshTable();
                 clearError();
-            } catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                refreshTable();
                 showError(ex.getMessage());
             }
         });
-
 
         // Back
         backButton.addActionListener(e -> onBack.run());
 
         // Clear error when selecting another stock
         stocksTable.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                clearError();
-            }
-        });
+                    if (!e.getValueIsAdjusting()) clearError();
 
+        });
         refreshTable();
     }
 
     private String getSelectedSymbol() {
-
         int selectedRow = stocksTable.getSelectedRow();
-
-        if (selectedRow == -1) {
-            return null;
-        }
-
+        if (selectedRow == -1) return null;
         int modelRow = stocksTable.convertRowIndexToModel(selectedRow);
-
         return tableModel.getValueAt(modelRow, 0).toString();
     }
 
@@ -163,7 +153,6 @@ public class ManageStocksPanel extends JPanel {
 
         List<Stock> stocks = marketService.getAllStocks();
         stocks.sort(Comparator.comparing(Stock::getSymbol));
-
         for (Stock stock : stocks) {
             tableModel.addRow(new Object[]{
                     stock.getSymbol(),

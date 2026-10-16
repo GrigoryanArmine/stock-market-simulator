@@ -1,12 +1,13 @@
-
 package com.armine.stockmarket.gui.trader;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class TraderMenuPanel extends JPanel {
-
     public TraderMenuPanel(Runnable onLogin, Runnable onCreateAccount, Runnable onBack) {
+        if (onLogin == null || onCreateAccount == null || onBack == null)
+            throw new IllegalArgumentException("Navigation callbacks cannot be null.");
+
         setLayout(new GridBagLayout());
 
         JPanel menuPanel = new JPanel();
@@ -19,6 +20,18 @@ public class TraderMenuPanel extends JPanel {
         JButton createAccountButton = new JButton("Create Account");
         JButton backButton = new JButton("Back");
 
+        // Consistent button sizes
+        Dimension buttonSize = new Dimension(180, 35);
+
+        loginButton.setPreferredSize(buttonSize);
+        createAccountButton.setPreferredSize(buttonSize);
+        backButton.setPreferredSize(buttonSize);
+
+        loginButton.setMaximumSize(buttonSize);
+        createAccountButton.setMaximumSize(buttonSize);
+        backButton.setMaximumSize(buttonSize);
+
+        // Center components
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -26,12 +39,12 @@ public class TraderMenuPanel extends JPanel {
         createAccountButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        // Navigation
         loginButton.addActionListener(e -> onLogin.run());
-        createAccountButton.addActionListener(
-                e -> onCreateAccount.run()
-        );
+        createAccountButton.addActionListener(e -> onCreateAccount.run());
         backButton.addActionListener(e -> onBack.run());
 
+        // Build interface
         menuPanel.add(titleLabel);
 
         menuPanel.add(Box.createVerticalStrut(15));

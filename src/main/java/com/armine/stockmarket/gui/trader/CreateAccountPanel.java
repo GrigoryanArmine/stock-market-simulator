@@ -10,8 +10,12 @@ import java.util.Arrays;
 import java.util.function.Consumer;
 
 public class CreateAccountPanel extends JPanel {
+    private Trader pendingTrader;
 
     public CreateAccountPanel(TraderService traderService, TraderPersistenceService traderPersistenceService, Consumer<Trader> onAccountCreated, Runnable onBack) {
+        if (traderService == null || traderPersistenceService == null || onAccountCreated == null || onBack == null)
+            throw new IllegalArgumentException("Account panel dependencies cannot be null.");
+
         setLayout(new GridBagLayout());
 
         JPanel accountPanel = new JPanel();
@@ -59,30 +63,56 @@ public class CreateAccountPanel extends JPanel {
         // Create account functionality
         createButton.addActionListener(e -> {
             errorLabel.setText(" ");
+            // Create the account only once
+            if (pendingTrader == null) {
+                String firstName = firstNameField.getText().trim();
+                String surname = surnameField.getText().trim();
+                String username = usernameField.getText().trim();
 
-            String firstName = firstNameField.getText().trim();
-            String surname = surnameField.getText().trim();
-            String username = usernameField.getText().trim();
+                char[] password = passwordField.getPassword();
+                char[] confirmPassword = confirmPasswordField.getPassword();
 
-            char[] password = passwordField.getPassword();
-            char[] confirmPassword = confirmPasswordField.getPassword();
+                try {
+                    // UI-specific validation
+                    if (!Arrays.equals(password, confirmPassword))
+                        throw new IllegalArgumentException("Passwords do not match.");
 
+                    // Model and service handle other validations
+                    pendingTrader = traderService.createTrader(firstName, surname, username, password);
+                } catch (IllegalArgumentException ex) {
+                    errorLabel.setText(ex.getMessage());
+                    return;
+                } finally {
+                    Arrays.fill(password, '\0');
+                    Arrays.fill(confirmPassword, '\0');
+                    passwordField.setText("");
+                    confirmPasswordField.setText("");
+                }
+            }
+
+            // Save the account
             try {
-                if (!Arrays.equals(password, confirmPassword))
-                    throw new IllegalArgumentException("Passwords do not match.");
-
-                Trader trader = traderService.createTrader(firstName, surname, username, password);
-
-                traderPersistenceService.saveTrader(trader);
-                onAccountCreated.accept(trader);
-
+                traderPersistenceService.saveTrader(pendingTrader);
             } catch (IllegalArgumentException | IllegalStateException ex) {
                 errorLabel.setText(ex.getMessage());
+                createButton.setText("Retry Save");
 
-            } finally {
-                Arrays.fill(password, '\0');
-                Arrays.fill(confirmPassword, '\0');
+                // Prevent changes to an account already created
+                firstNameField.setEditable(false);
+                surnameField.setEditable(false);
+                usernameField.setEditable(false);
+                passwordField.setEditable(false);
+                confirmPasswordField.setEditable(false);
+
+                // Avoid leaving the unsaved account behind
+                backButton.setEnabled(false);
+                return;
             }
+            // Account successfully saved
+            Trader createdTrader = pendingTrader;
+            pendingTrader = null;
+
+            onAccountCreated.accept(createdTrader);
         });
 
         // Back navigation

@@ -10,6 +10,9 @@ import java.util.function.Consumer;
 
 public class AdminLoginPanel extends JPanel {
     public AdminLoginPanel(AdminService adminService, Consumer<Admin> onLoginSuccess, Runnable onBack) {
+        if (adminService == null || onLoginSuccess == null || onBack == null)
+            throw new IllegalArgumentException("Admin login dependencies cannot be null.");
+
         setLayout(new GridBagLayout());
 
         JPanel loginPanel = new JPanel();
@@ -32,7 +35,6 @@ public class AdminLoginPanel extends JPanel {
         // Show password checkbox
         JCheckBox showPasswordCheckBox = new JCheckBox("Show password");
         char defaultEchoChar = passwordField.getEchoChar();
-
         showPasswordCheckBox.addActionListener(e -> {
             if (showPasswordCheckBox.isSelected()) {
                 passwordField.setEchoChar((char) 0);
@@ -56,40 +58,31 @@ public class AdminLoginPanel extends JPanel {
 
         // Login functionality
         loginButton.addActionListener(e -> {
-            String username = usernameField.getText().trim();
+            errorLabel.setText(" ");
+            String username = usernameField.getText();
             char[] password = passwordField.getPassword();
+            Admin admin;
             try {
-                if (username.isEmpty() || password.length == 0) {
-                    errorLabel.setText("Please enter your username and password.");
-                    return;
-                }
-                Admin admin = adminService.login(username, password);
-                if (admin == null) {
-                    errorLabel.setText("Invalid username or password.");
-                    passwordField.setText("");
-                } else {
-                    errorLabel.setText(" ");
-                    onLoginSuccess.accept(admin);
-                }
-
+                admin = adminService.login(username, password);
             } finally {
                 Arrays.fill(password, '\0');
+                passwordField.setText("");
             }
+            if (admin == null) {
+                errorLabel.setText("Invalid username or password.");
+                return;
+            }
+            onLoginSuccess.accept(admin);
         });
 
         // Back navigation
         backButton.addActionListener(e -> onBack.run());
 
         // Press Enter to log in
-        usernameField.addActionListener(
-                e -> loginButton.doClick()
-        );
+        usernameField.addActionListener(e -> loginButton.doClick());
+        passwordField.addActionListener(e -> loginButton.doClick());
 
-        passwordField.addActionListener(
-                e -> loginButton.doClick()
-        );
-
-        // Center all components
+        // Center components
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -99,9 +92,7 @@ public class AdminLoginPanel extends JPanel {
         passwordLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         passwordField.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        showPasswordCheckBox.setAlignmentX(
-                Component.CENTER_ALIGNMENT
-        );
+        showPasswordCheckBox.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);

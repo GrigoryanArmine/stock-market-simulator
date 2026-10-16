@@ -15,13 +15,10 @@ public class MainFrame extends JFrame {
     private TransactionService transactionService;
     private AdminService adminService;
 
-    public MainFrame(
-            TraderService traderService,
-            MarketService marketService,
-            TradingService tradingService,
-            TraderPersistenceService traderPersistenceService,
-            TransactionService transactionService,
-            AdminService adminService) {
+    public MainFrame(TraderService traderService, MarketService marketService, TradingService tradingService, TraderPersistenceService traderPersistenceService, TransactionService transactionService, AdminService adminService) {
+        if (traderService == null || marketService == null || tradingService == null || traderPersistenceService == null || transactionService == null || adminService == null)
+            throw new IllegalArgumentException("Services cannot be null.");
+
         this.traderService = traderService;
         this.marketService = marketService;
         this.tradingService = tradingService;
@@ -37,85 +34,64 @@ public class MainFrame extends JFrame {
         showMainMenu();
     }
 
-    private void showMainMenu() {
-        getContentPane().removeAll();
-
-        MainMenuPanel mainMenuPanel = new MainMenuPanel(
-                () -> showTraderMenu(),
-                () -> showAdminLogin(),
-                () -> System.exit(0)
-        );
-
-        add(mainMenuPanel);
-
+    // Shared navigation method
+    private void showPanel(JPanel panel) {
+        setContentPane(panel);
         revalidate();
         repaint();
+    }
+
+    private void showMainMenu() {
+        MainMenuPanel panel = new MainMenuPanel(
+                this::showTraderMenu,
+                this::showAdminLogin,
+                () -> System.exit(0)
+        );
+        showPanel(panel);
     }
 
     private void showTraderMenu() {
-        getContentPane().removeAll();
-
-        TraderMenuPanel traderMenuPanel = new TraderMenuPanel(
-                () -> showLogin(),
-                () -> showCreateAccount(),
-                () -> showMainMenu()
+        TraderMenuPanel panel = new TraderMenuPanel(
+                this::showLogin,
+                this::showCreateAccount,
+                this::showMainMenu
         );
-
-        add(traderMenuPanel);
-
-        revalidate();
-        repaint();
+        showPanel(panel);
     }
-
 
     private void showLogin() {
-        getContentPane().removeAll();
-
-        LoginPanel loginPanel = new LoginPanel(traderService, trader -> showTraderDashboard(trader, false), () -> showTraderMenu());
-
-        add(loginPanel);
-
-        revalidate();
-        repaint();
+        LoginPanel panel = new LoginPanel(
+                traderService,
+                trader -> showTraderDashboard(trader, false),
+                this::showTraderMenu
+        );
+        showPanel(panel);
     }
 
-
-
     private void showCreateAccount() {
-        getContentPane().removeAll();
-
-        CreateAccountPanel createAccountPanel =
-                new CreateAccountPanel(traderService, traderPersistenceService,
-                        trader -> showTraderDashboard(trader, true),
-                        () -> showTraderMenu()
-                );
-
-        add(createAccountPanel);
-
-        revalidate();
-        repaint();
+        CreateAccountPanel panel = new CreateAccountPanel(
+                traderService,
+                traderPersistenceService,
+                trader -> showTraderDashboard(trader, true),
+                this::showTraderMenu
+        );
+        showPanel(panel);
     }
 
     private void showTraderDashboard(Trader trader, boolean newAccount) {
-        getContentPane().removeAll();
-
-        TraderDashboardPanel dashboardPanel = new TraderDashboardPanel(trader, newAccount,
-                        () -> showMarket(trader),
-                        () -> showPortfolio(trader),
-                        () -> showTransactions(trader),
-                        () -> showTraderMenu()
+        TraderDashboardPanel panel = new TraderDashboardPanel(
+                trader,
+                newAccount,
+                () -> showMarket(trader),
+                () -> showPortfolio(trader),
+                () -> showTransactions(trader),
+                this::showTraderMenu
         );
-
-        add(dashboardPanel);
-
-        revalidate();
-        repaint();
+        showPanel(panel);
     }
 
     private void showMarket(Trader trader) {
-        getContentPane().removeAll();
-
-        MarketPanel marketPanel = new MarketPanel(
+        MarketPanel panel = new MarketPanel(
                 this,
                 trader,
                 marketService,
@@ -125,19 +101,11 @@ public class MainFrame extends JFrame {
                 () -> showTraderDashboard(trader, false),
                 () -> showMarket(trader)
         );
-
-        add(marketPanel);
-
-        revalidate();
-        repaint();
+        showPanel(panel);
     }
 
-
-
     private void showPortfolio(Trader trader) {
-        getContentPane().removeAll();
-
-        PortfolioPanel portfolioPanel = new PortfolioPanel(
+        PortfolioPanel panel = new PortfolioPanel(
                 this,
                 trader,
                 tradingService,
@@ -146,67 +114,49 @@ public class MainFrame extends JFrame {
                 () -> showTraderDashboard(trader, false),
                 () -> showPortfolio(trader)
         );
-
-        add(portfolioPanel);
-        revalidate();
-        repaint();
+        showPanel(panel);
     }
 
     private void showTransactions(Trader trader) {
-        getContentPane().removeAll();
-
-        TransactionsPanel transactionsPanel = new TransactionsPanel(trader, () -> showTraderDashboard(trader, false));
-
-        add(transactionsPanel);
-        revalidate();
-        repaint();
+        TransactionsPanel panel = new TransactionsPanel(
+                trader,
+                () -> showTraderDashboard(trader, false)
+        );
+        showPanel(panel);
     }
-
 
     private void showAdminLogin() {
-        getContentPane().removeAll();
-
-        AdminLoginPanel loginPanel = new AdminLoginPanel(adminService, admin -> showAdminDashboard(), () -> showMainMenu());
-        add(loginPanel);
-
-        revalidate();
-        repaint();
+        AdminLoginPanel panel = new AdminLoginPanel(
+                adminService,
+                admin -> showAdminDashboard(),
+                this::showMainMenu
+        );
+        showPanel(panel);
     }
 
-
-
     private void showAdminDashboard() {
-        getContentPane().removeAll();
-
-        AdminDashboardPanel dashboardPanel = new AdminDashboardPanel(
-                () -> showManageStocks(),
-                () -> showManageTraders(),
-                () -> showMainMenu()
+        AdminDashboardPanel panel = new AdminDashboardPanel(
+                this::showManageStocks,
+                this::showManageTraders,
+                this::showMainMenu
         );
-        add(dashboardPanel);
-        revalidate();
-        repaint();
+        showPanel(panel);
     }
 
     private void showManageStocks() {
-        getContentPane().removeAll();
-        ManageStocksPanel manageStocksPanel = new ManageStocksPanel(marketService, traderService, ()->showAdminDashboard());
-        add(manageStocksPanel);
-        revalidate();
-        repaint();
+        ManageStocksPanel panel = new ManageStocksPanel(
+                marketService,
+                traderService,
+                this::showAdminDashboard
+        );
+        showPanel(panel);
     }
 
     private void showManageTraders() {
-        getContentPane().removeAll();
-
-        ManageTradersPanel manageTradersPanel = new ManageTradersPanel(
+        ManageTradersPanel panel = new ManageTradersPanel(
                 traderService,
-                ()-> showAdminDashboard()
+                this::showAdminDashboard
         );
-
-        add(manageTradersPanel);
-
-        revalidate();
-        repaint();
+        showPanel(panel);
     }
 }

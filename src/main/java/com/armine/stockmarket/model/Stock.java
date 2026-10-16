@@ -1,25 +1,30 @@
 package com.armine.stockmarket.model;
-import java.util.Objects;
+
+import java.util.Locale;
 
 public class Stock {
-
     private String symbol;
     private String companyName;
     private double currentPrice;
 
     public Stock(String symbol, String companyName, double currentPrice) {
-        if (symbol == null || symbol.isBlank()) {
+        if (symbol == null || symbol.isBlank())
             throw new IllegalArgumentException("Stock symbol cannot be empty.");
-        }
-
-        if (companyName == null || companyName.isBlank()) {
+        if (companyName == null || companyName.isBlank())
             throw new IllegalArgumentException("Company name cannot be empty.");
-        }
-        validatePrice(currentPrice);
 
-        this.symbol = symbol.toUpperCase();
-        this.companyName = companyName;
+        validatePrice(currentPrice);
+        this.symbol = symbol.trim().toUpperCase(Locale.ROOT);
+        this.companyName = companyName.trim();
         this.currentPrice = currentPrice;
+    }
+
+    public Stock(Stock other) {
+        if (other == null) throw new IllegalArgumentException("Stock cannot be null.");
+
+        this.symbol = other.symbol;
+        this.companyName = other.companyName;
+        this.currentPrice = other.currentPrice;
     }
 
     public String getSymbol() {
@@ -39,30 +44,23 @@ public class Stock {
         this.currentPrice = newPrice;
     }
 
+    public static void validatePrice(double price) {
+        if (!Double.isFinite(price)) throw new IllegalArgumentException("Please enter a valid numeric price.");
+        if (price <= 0) throw new IllegalArgumentException("Stock price must be greater than zero.");
+    }
+
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object obj) {
+        if (this == obj)
             return true;
-        }
-
-        if (!(o instanceof Stock stock)) {
+        if (!(obj instanceof Stock stock))
             return false;
-        }
-
         return symbol.equals(stock.symbol);
     }
-    public static void validatePrice(double price) {
-        if (!Double.isFinite(price)) {
-            throw new IllegalArgumentException("Please enter a valid numeric price.");
-        }
 
-        if (price <= 0) {
-            throw new IllegalArgumentException("Stock price must be greater than zero.");
-        }
-    }
     @Override
     public int hashCode() {
-        return Objects.hash(symbol);
+        return symbol.hashCode();
     }
 
     @Override
@@ -70,4 +68,3 @@ public class Stock {
         return symbol + " - " + companyName + " ($" + currentPrice + ")";
     }
 }
-
