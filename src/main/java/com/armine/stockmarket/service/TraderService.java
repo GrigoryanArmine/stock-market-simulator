@@ -45,28 +45,6 @@ public class TraderService {
         this.random = new Random();
     }
     /**
-     * Attempts to create a trader service from another instance.
-     *
-     * The intended behavior is to copy the trader list,
-     * share the password service, and create a new random
-     * number generator.
-     *
-     * Note: The current implementation checks the uninitialized
-     * passwordService field, so this constructor always throws
-     * an IllegalArgumentException.
-     *
-     * @param other the trader service to copy
-     * @throws IllegalArgumentException always in the
-     *         current implementation
-     */
-    public TraderService(TraderService other) {
-        if (passwordService == null) throw new IllegalArgumentException("PasswordService cannot be null.");
-
-        this.traders = new ArrayList<>(other.traders);
-        this.passwordService = other.passwordService;
-        this.random = new Random();
-    }
-    /**
      * Registers a new trader account.
      *
      * Validates the provided information, checks username

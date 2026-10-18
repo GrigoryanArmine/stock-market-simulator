@@ -92,7 +92,7 @@ public class SellStockDialog extends JDialog {
 
         setSize(400, 390);
         setLocationRelativeTo(parent);
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -156,8 +156,6 @@ public class SellStockDialog extends JDialog {
         panel.add(Box.createVerticalStrut(10));
         panel.add(cancelButton);
 
-        cancelButton.addActionListener(e -> dispose());
-
         sellButton.addActionListener(e -> {
             if (!saleCompleted) {
                 int quantity;
@@ -207,7 +205,7 @@ public class SellStockDialog extends JDialog {
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent e) {
-                checkUnsavedSale();
+                if (checkUnsavedSale()) dispose();
             }
         });
         cancelButton.addActionListener(e -> {
