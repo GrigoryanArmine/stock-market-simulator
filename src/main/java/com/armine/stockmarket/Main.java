@@ -7,8 +7,34 @@ import com.armine.stockmarket.ui.MainMenuUI;
 
 import java.util.Arrays;
 import java.util.List;
-
+/**
+ * Entry point for the console version of the stock market simulator.
+ *
+ * Initializes market, trading, authentication, and persistence
+ * services. Loads previously saved market information, trader
+ * accounts, and transaction histories.
+ *
+ * After initialization, starts the interactive console menu
+ * through MainMenuUI.
+ */
 public class Main {
+
+    /**
+     * Creates the console application entry point.
+     */
+    public Main() {
+    }
+    /**
+     * Starts the console-based stock market simulator.
+     *
+     * Initializes the application's services, restores saved
+     * data, creates the demonstration administrator account,
+     * and launches the console interface.
+     *
+     * Startup errors are reported to the standard error stream.
+     *
+     * @param args command-line arguments, currently unused
+     */
     public static void main(String[] args) {
         try {
             // Initialize market

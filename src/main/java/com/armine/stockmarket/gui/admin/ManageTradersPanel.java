@@ -8,13 +8,51 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.Locale;
 import java.util.Map;
-
+/**
+ * Provides the graphical interface for viewing registered traders.
+ *
+ * Displays trader account information in a read-only table,
+ * including trader IDs, usernames, full names, cash balances,
+ * total owned shares, and portfolio values.
+ *
+ * Administrators can select a trader to inspect their stock
+ * holdings in a separate dialog or refresh the displayed data.
+ *
+ * Trader information is retrieved through TraderService.
+ * This panel provides viewing functionality and does not
+ * directly modify trader accounts or portfolios.
+ */
 public class ManageTradersPanel extends JPanel {
+    /** Service used to retrieve trader accounts. */
     private TraderService traderService;
+    /** Table model holding displayed trader data. */
     private DefaultTableModel tableModel;
+    /** Table displaying registered trader accounts. */
     private JTable tradersTable;
+    /** Label displaying trader management errors. */
     private JLabel errorLabel;
-
+    /**
+     * Creates the trader management panel.
+     *
+     * Initializes a read-only table displaying registered
+     * traders and their account information.
+     *
+     * Provides buttons for viewing a selected trader's
+     * portfolio, refreshing the table, and returning
+     * to the administrator dashboard.
+     *
+     * If no trader is selected or the selected trader
+     * is no longer available, an error message is displayed.
+     *
+     * The table is populated when the panel is created.
+     *
+     * @param traderService the service providing registered
+     *        trader accounts and account lookup operations
+     * @param onBack the callback used to return to the
+     *        administrator dashboard
+     * @throws IllegalArgumentException if traderService
+     *         or onBack is null
+     */
     public ManageTradersPanel(TraderService traderService, Runnable onBack) {
         if (traderService == null || onBack == null)
             throw new IllegalArgumentException("Manage traders dependencies cannot be null.");
@@ -102,7 +140,21 @@ public class ManageTradersPanel extends JPanel {
         tradersTable.getSelectionModel().addListSelectionListener(e -> {if (!e.getValueIsAdjusting()) clearError();});
         refreshTable();
     }
-
+    /**
+     * Refreshes the table of registered traders.
+     *
+     * Clears the existing rows and retrieves all trader
+     * accounts from TraderService.
+     *
+     * For each trader, calculates the total number of
+     * owned shares by summing the quantities of all
+     * stocks in their portfolio.
+     *
+     * Displays the trader's account information, cash
+     * balance, total shares, and current portfolio value.
+     *
+     * Monetary amounts are formatted to two decimal places.
+     */
     private void refreshTable() {
         tableModel.setRowCount(0);
 
@@ -123,7 +175,23 @@ public class ManageTradersPanel extends JPanel {
             });
         }
     }
-
+    /**
+     * Displays the selected trader's portfolio in a dialog.
+     *
+     * Retrieves the trader's holdings and constructs a
+     * text summary containing the trader's full name,
+     * owned stock symbols, share quantities, and the
+     * current value of each holding.
+     *
+     * If the trader owns no stocks, an informational
+     * message is displayed instead.
+     *
+     * The portfolio details are shown in a read-only
+     * text area inside a JOptionPane dialog.
+     *
+     * @param trader the trader whose portfolio
+     *        information will be displayed
+     */
     private void showPortfolio(Trader trader) {
         StringBuilder details = new StringBuilder();
 
@@ -159,11 +227,17 @@ public class ManageTradersPanel extends JPanel {
 
         JOptionPane.showMessageDialog(this, new JScrollPane(detailsArea), "Trader Portfolio", JOptionPane.INFORMATION_MESSAGE);
     }
-
+    /**
+     * Displays an error message in the trader management panel.
+     *
+     * @param message the error message to display
+     */
     private void showError(String message) {
         errorLabel.setText(message);
     }
-
+    /**
+     * Clears the currently displayed error message.
+     */
     private void clearError() {
         errorLabel.setText(" ");
     }

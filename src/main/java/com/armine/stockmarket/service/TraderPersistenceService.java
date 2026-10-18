@@ -12,22 +12,79 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-
+/**
+ * Handles file-based persistence of trader accounts.
+ *
+ * Each trader is stored in a separate UTF-8 text file
+ * inside the configured directory. The file contains
+ * the trader's account information, balance, password hash,
+ * and portfolio holdings.
+ *
+ * Saving uses a temporary file and atomic replacement
+ * to reduce the risk of losing existing trader data.
+ *
+ * When loading a portfolio, stock holdings are matched
+ * to stocks in the current market using their symbols.
+ *
+ * Transaction history is managed separately by
+ * TransactionService.
+ */
 public class TraderPersistenceService {
     private String directoryName;
-
+    /**
+     * Creates a persistence service using the specified directory.
+     *
+     * @param directoryName the directory used to store trader files
+     * @throws IllegalArgumentException if directoryName
+     *         is null or blank
+     */
     public TraderPersistenceService(String directoryName) {
         if (directoryName == null || directoryName.isBlank())
             throw new IllegalArgumentException("Directory name cannot be empty.");
         this.directoryName = directoryName;
     }
-
+    /**
+     * Creates a copy of an existing trader persistence service.
+     *
+     * The new service uses the same storage directory
+     * as the original service.
+     *
+     * @param other the persistence service to copy
+     * @throws IllegalArgumentException if other is null
+     */
     public TraderPersistenceService(TraderPersistenceService other) {
         if (other == null)
             throw new IllegalArgumentException("TraderPersistenceService cannot be null.");
         this.directoryName = other.directoryName;
     }
-
+    /**
+     * Saves a trader's account information and portfolio holdings.
+     *
+     * Creates the storage directory if it does not already exist.
+     * The trader's data is written to a UTF-8 text file named
+     * after the username.
+     *
+     * The file stores the trader ID, username, first name,
+     * surname, cash balance, and password hash, followed
+     * by the portfolio holdings.
+     *
+     * Each portfolio record contains the stock symbol,
+     * company name, current market price, and share quantity.
+     *
+     * Data is first written to a temporary file in the same
+     * directory. The temporary file then atomically replaces
+     * the destination file.
+     *
+     * If saving fails, the method attempts to delete the
+     * temporary file without hiding the original exception.
+     *
+     * @param trader the trader whose account data will be saved
+     * @throws IllegalArgumentException if trader is null
+     *         or its username is invalid for file storage
+     * @throws IllegalStateException if the storage directory
+     *         cannot be created, the storage path is invalid,
+     *         saving fails, or atomic replacement is unsupported
+     */
     public void saveTrader(Trader trader) {
         if (trader == null)
             throw new IllegalArgumentException("Trader cannot be null.");
@@ -58,13 +115,12 @@ public class TraderPersistenceService {
                     Stock stock = entry.getKey();
                     int quantity = entry.getValue();
                     writer.write(stock.getSymbol() + ","
-                                    + stock.getCompanyName() + ","
-                                    + stock.getCurrentPrice() + ","
-                                    + quantity + "\n"
+                            + stock.getCompanyName() + ","
+                            + stock.getCurrentPrice() + ","
+                            + quantity + "\n"
                     );
                 }
             }
-            // Atomically replace the trader file
             Files.move(temporaryFile, filePath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (AtomicMoveNotSupportedException e) {
             throw new IllegalStateException("Atomic trader saving is not supported.", e);
@@ -74,13 +130,39 @@ public class TraderPersistenceService {
             if (temporaryFile != null) {
                 try {
                     Files.deleteIfExists(temporaryFile);
-                } catch (IOException ignored) {
-                    // Preserve the original exception
-                }
+                } catch (IOException ignored) {}
             }
         }
     }
-
+    /**
+     * Loads a trader account from its saved text file.
+     *
+     * Returns null if the username is null or blank,
+     * or if no matching trader file exists.
+     *
+     * Reads the trader's ID, username, personal information,
+     * account balance, and stored password hash.
+     *
+     * Portfolio records are restored using Stock objects
+     * from the provided MarketService. The saved stock
+     * symbols identify the holdings, while share quantities
+     * determine the number of shares owned.
+     *
+     * The method rejects duplicate stock holdings,
+     * missing market stocks, and invalid portfolio records.
+     *
+     * Transaction history is not loaded by this method.
+     *
+     * @param username the username identifying the saved trader
+     * @param marketService the market used to resolve stock holdings
+     * @return the restored trader, or null if the username
+     *         is blank or the trader file does not exist
+     * @throws IllegalArgumentException if the username is
+     *         invalid for file storage or marketService is null
+     * @throws IllegalStateException if the file is invalid,
+     *         account data cannot be parsed, a required stock
+     *         is missing, or reading fails
+     */
     public Trader loadTrader(String username, MarketService marketService) {
         if (username == null || username.isBlank())
             return null;
@@ -137,7 +219,26 @@ public class TraderPersistenceService {
             throw new IllegalStateException("Could not load trader file " + file.getName() + ": " + e.getMessage(), e);
         }
     }
-
+    /**
+     * Loads all saved trader accounts from the storage directory.
+     *
+     * Searches the configured directory for files ending
+     * with ".txt" and attempts to restore each trader.
+     *
+     * If the directory does not exist, an empty list is returned.
+     * The ordering of loaded traders is not guaranteed.
+     *
+     * Each trader's portfolio is reconstructed using
+     * stocks from the provided market.
+     *
+     * @param marketService the market used to restore stock holdings
+     * @return a list containing all successfully loaded traders,
+     *         or an empty list if no trader directory exists
+     * @throws IllegalArgumentException if marketService is null
+     * @throws IllegalStateException if the storage path is invalid,
+     *         the directory cannot be read, or a trader file
+     *         cannot be loaded
+     */
     public List<Trader> loadAllTraders(MarketService marketService) {
         if (marketService == null)
             throw new IllegalArgumentException("MarketService cannot be null.");
@@ -163,7 +264,16 @@ public class TraderPersistenceService {
         }
         return traders;
     }
-
+    /**
+     * Validates a username before using it in a file name.
+     *
+     * Only English letters, digits, and underscores
+     * are permitted.
+     *
+     * @param username the username to validate
+     * @throws IllegalArgumentException if username is null
+     *         or contains characters outside the allowed pattern
+     */
     private void validateUsername(String username) {
         if (username == null || !username.matches("[a-zA-Z0-9_]+"))
             throw new IllegalArgumentException("Invalid username for file storage.");

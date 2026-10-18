@@ -7,8 +7,45 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Arrays;
 import java.util.function.Consumer;
-
+/**
+ * Provides the graphical login interface for administrators.
+ *
+ * Allows administrators to enter their username and password
+ * and authenticates their credentials using AdminService.
+ *
+ * The panel includes a password visibility option,
+ * displays an error message for invalid credentials,
+ * and supports keyboard-based form submission.
+ *
+ * After successful authentication, the authenticated Admin
+ * object is passed to a callback that handles navigation
+ * to the administrator dashboard.
+ */
 public class AdminLoginPanel extends JPanel {
+    /**
+     * Creates the administrator login panel.
+     *
+     * Initializes the username and password fields,
+     * password visibility checkbox, error message,
+     * and navigation buttons.
+     *
+     * Login requests are delegated to AdminService.
+     * If authentication returns null, an invalid credentials
+     * message is displayed without leaving the panel.
+     *
+     * If authentication succeeds, the authenticated administrator
+     * is passed to the onLoginSuccess callback.
+     *
+     * After each login attempt, the password character array
+     * is cleared and the password field is reset.
+     *
+     * @param adminService the service used to authenticate administrators
+     * @param onLoginSuccess the callback invoked with the
+     *        authenticated administrator after successful login
+     * @param onBack the callback used to return to the main menu
+     * @throws IllegalArgumentException if adminService,
+     *         onLoginSuccess, or onBack is null
+     */
     public AdminLoginPanel(AdminService adminService, Consumer<Admin> onLoginSuccess, Runnable onBack) {
         if (adminService == null || onLoginSuccess == null || onBack == null)
             throw new IllegalArgumentException("Admin login dependencies cannot be null.");

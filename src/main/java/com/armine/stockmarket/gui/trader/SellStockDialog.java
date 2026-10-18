@@ -9,23 +9,76 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.util.Locale;
-
+/**
+ * Provides a modal dialog for selling stock shares.
+ *
+ * Displays the selected stock's information, the trader's
+ * available balance, the number of shares owned, and the
+ * expected proceeds from the sale.
+ *
+ * The entered quantity is validated through TradingService,
+ * and the total proceeds are updated automatically.
+ *
+ * After a successful sale, the dialog saves the trader's
+ * account information and transaction history.
+ *
+ * If saving fails, the dialog allows the user to retry
+ * saving without executing the sale again.
+ */
 public class SellStockDialog extends JDialog {
+    /** Stock selected for sale. */
     private Stock stock;
+    /** Trader performing the sale. */
     private Trader trader;
+    /** Service validating and executing the sale. */
     private TradingService tradingService;
+    /** Service saving the updated trader account. */
     private TraderPersistenceService traderPersistenceService;
+    /** Service saving recorded transactions. */
     private TransactionService transactionService;
+    /** Input field for the number of shares to sell. */
     private JTextField quantityField;
+    /** Label displaying sale or saving errors. */
     private JLabel errorLabel;
+    /** Label displaying the calculated sale proceeds. */
     private JLabel totalLabel;
+    /** Label displaying the trader's cash balance. */
     private JLabel balanceLabel;
+    /** Label confirming a completed sale. */
     private JLabel successLabel;
+    /** Label displaying the number of shares owned. */
     private JLabel ownedLabel;
+    /** Button executing a sale or retrying a save. */
     private JButton sellButton;
+    /** Whether the sale has already been executed. */
     private boolean saleCompleted = false;
+    /** Whether the completed sale was successfully saved. */
     private boolean saleSaved = false;
-
+    /**
+     * Creates a modal dialog for selling the specified stock.
+     *
+     * Displays the stock's current market price, the number
+     * of shares owned, and the trader's available cash balance.
+     *
+     * The Sell Stock button is initially disabled. It becomes
+     * enabled when the entered quantity passes validation.
+     *
+     * After a successful sale, the dialog updates the displayed
+     * balance and share quantity, then attempts to save the
+     * trader's account and transaction history.
+     *
+     * If saving fails, the sale remains completed in memory,
+     * and the button changes to "Retry Save".
+     *
+     * @param parent the parent window for the modal dialog
+     * @param stock the stock selected for sale
+     * @param trader the trader selling shares
+     * @param tradingService the service processing stock sales
+     * @param traderPersistenceService the service saving trader data
+     * @param transactionService the service saving transaction history
+     * @throws IllegalArgumentException if stock, trader,
+     *         or any required service is null
+     */
     public SellStockDialog(JFrame parent, Stock stock, Trader trader, TradingService tradingService, TraderPersistenceService traderPersistenceService, TransactionService transactionService) {
         super(parent, "Sell Stock", true);
         if (stock == null || trader == null || tradingService == null || traderPersistenceService == null || transactionService == null)
@@ -180,7 +233,20 @@ public class SellStockDialog extends JDialog {
         );
         add(panel);
     }
-
+    /**
+     * Checks whether a completed sale has been fully saved.
+     *
+     * If the sale was executed but saving did not succeed,
+     * displays a confirmation dialog asking whether the
+     * user wants to close despite the unsaved changes.
+     *
+     * If the sale has not been executed or has already
+     * been saved, no confirmation dialog is displayed.
+     *
+     * @return true if the user confirms closing or no
+     *         unsaved sale exists, false if the user
+     *         chooses not to close
+     */
     private boolean checkUnsavedSale() {
         if (saleCompleted && !saleSaved) {
             int choice = JOptionPane.showConfirmDialog(
@@ -194,7 +260,25 @@ public class SellStockDialog extends JDialog {
         }
         return true;
     }
-
+    /**
+     * Validates the entered share quantity and updates
+     * the expected proceeds from the sale.
+     *
+     * Called whenever the quantity field changes.
+     *
+     * The method parses the quantity and uses TradingService
+     * to verify that the trader owns enough shares and
+     * that the resulting account balance is valid.
+     *
+     * If validation succeeds, the expected proceeds
+     * are displayed and the Sell Stock button is enabled.
+     *
+     * If validation fails, an error message is displayed,
+     * the proceeds are reset to zero, and selling is disabled.
+     *
+     * Once a sale has completed, this method returns
+     * without modifying the sale controls.
+     */
     private void updateTotal() {
         if (saleCompleted) return;
         String input = quantityField.getText().trim();

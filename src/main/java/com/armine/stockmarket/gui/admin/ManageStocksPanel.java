@@ -10,14 +10,54 @@ import java.awt.*;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-
+/**
+ * Provides the graphical interface for managing market stocks.
+ *
+ * Displays available stocks in a read-only table containing
+ * their symbols, company names, and current prices.
+ *
+ * Administrators can add new stocks, update existing stock
+ * prices, and remove stocks from the market.
+ *
+ * Stock operations are delegated to MarketService,
+ * while TraderService is provided when removing stocks.
+ *
+ * The panel also handles stock selection, table refreshing,
+ * error messages, and navigation to the administrator dashboard.
+ */
 public class ManageStocksPanel extends JPanel {
+    /** Service used to manage market stocks. */
     private MarketService marketService;
+    /** Service providing trader data for stock removal. */
     private TraderService traderService;
+    /** Table model holding displayed stock data. */
     private DefaultTableModel tableModel;
+    /** Table displaying available market stocks. */
     private JTable stocksTable;
+    /** Label displaying stock management errors. */
     private JLabel errorLabel;
-
+    /**
+     * Creates the stock management panel.
+     *
+     * Initializes a read-only stock table and buttons for
+     * adding stocks, updating prices, removing stocks,
+     * and returning to the administrator dashboard.
+     *
+     * Adding and updating stocks are performed through
+     * separate dialogs. Removing a stock requires confirmation
+     * before the operation is delegated to MarketService.
+     *
+     * The stock table is refreshed after successful changes
+     * and when the panel is first displayed.
+     *
+     * @param marketService the service managing market stocks
+     * @param traderService the service providing trader information
+     *        required by the stock removal operation
+     * @param onBack the callback used to return to the
+     *        administrator dashboard
+     * @throws IllegalArgumentException if marketService,
+     *         traderService, or onBack is null
+     */
     public ManageStocksPanel(MarketService marketService, TraderService traderService, Runnable onBack) {
         if (marketService == null || traderService == null || onBack == null)
             throw new IllegalArgumentException("Manage stocks dependencies cannot be null.");
@@ -135,19 +175,37 @@ public class ManageStocksPanel extends JPanel {
 
         // Clear error when selecting another stock
         stocksTable.getSelectionModel().addListSelectionListener(e -> {
-                    if (!e.getValueIsAdjusting()) clearError();
+            if (!e.getValueIsAdjusting()) clearError();
 
         });
         refreshTable();
     }
-
+    /**
+     * Returns the symbol of the currently selected stock.
+     *
+     * Converts the selected table row from its view index
+     * to the corresponding model index before retrieving
+     * the stock symbol.
+     *
+     * @return the selected stock symbol, or null if
+     *         no stock is selected
+     */
     private String getSelectedSymbol() {
         int selectedRow = stocksTable.getSelectedRow();
         if (selectedRow == -1) return null;
         int modelRow = stocksTable.convertRowIndexToModel(selectedRow);
         return tableModel.getValueAt(modelRow, 0).toString();
     }
-
+    /**
+     * Refreshes the stock management table.
+     *
+     * Clears existing table rows, retrieves the current
+     * stocks from MarketService, and sorts them
+     * alphabetically by stock symbol.
+     *
+     * Each row displays the stock symbol, company name,
+     * and current price formatted to two decimal places.
+     */
     private void refreshTable() {
         tableModel.setRowCount(0);
 
@@ -161,11 +219,17 @@ public class ManageStocksPanel extends JPanel {
             });
         }
     }
-
+    /**
+     * Displays an error message in the stock management panel.
+     *
+     * @param message the error message to display
+     */
     private void showError(String message) {
         errorLabel.setText(message);
     }
-
+    /**
+     * Clears the currently displayed error message.
+     */
     private void clearError() {
         errorLabel.setText(" ");
     }

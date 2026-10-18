@@ -5,7 +5,18 @@ import com.armine.stockmarket.service.*;
 
 import java.util.Arrays;
 import java.util.Scanner;
-
+/**
+ * Provides the main console menu for the stock market simulator.
+ *
+ * Allows users to select the trader or administrator interface,
+ * create trader accounts, and authenticate existing users.
+ *
+ * The class delegates account management and authentication
+ * to the corresponding service classes.
+ *
+ * After successful authentication, it launches either the
+ * trader console interface or the administrator console interface.
+ */
 public class MainMenuUI {
     private TraderService traderService;
     private AdminService adminService;
@@ -14,7 +25,22 @@ public class MainMenuUI {
     private TradingService tradingService;
     private TransactionService transactionService;
     private Scanner scanner;
-
+    /**
+     * Creates the main console menu with the required services.
+     *
+     * All services are provided through the constructor and
+     * stored for use during menu navigation and authentication.
+     *
+     * A Scanner is initialized to read input from System.in.
+     *
+     * @param traderService the service managing trader accounts
+     * @param adminService the service authenticating administrators
+     * @param traderPersistenceService the service saving trader data
+     * @param marketService the service managing available stocks
+     * @param tradingService the service processing stock transactions
+     * @param transactionService the service managing transaction history
+     * @throws IllegalArgumentException if any required service is null
+     */
     public MainMenuUI(TraderService traderService, AdminService adminService, TraderPersistenceService traderPersistenceService, MarketService marketService, TradingService tradingService, TransactionService transactionService) {
         if (traderService == null || adminService == null || traderPersistenceService == null || marketService == null || tradingService == null || transactionService == null)
             throw new IllegalArgumentException("Main menu dependencies cannot be null.");
@@ -27,7 +53,12 @@ public class MainMenuUI {
         this.transactionService = transactionService;
         this.scanner = new Scanner(System.in);
     }
-
+    /**
+     * Displays the main application menu.
+     *
+     * Presents options for accessing the trader interface,
+     * accessing the administrator interface, or exiting.
+     */
     public void showMenu() {
         System.out.println();
         System.out.println("==============================");
@@ -40,7 +71,18 @@ public class MainMenuUI {
         System.out.println();
         System.out.print("Choose an option: ");
     }
-
+    /**
+     * Starts the main console menu loop.
+     *
+     * Continuously displays the main menu and processes
+     * the user's selection until the exit option is chosen.
+     *
+     * Depending on the selected option, opens the trader
+     * menu or starts administrator authentication.
+     *
+     * Invalid options display an error message without
+     * terminating the application.
+     */
     public void start() {
         boolean running = true;
         while (running) {
@@ -62,7 +104,15 @@ public class MainMenuUI {
             }
         }
     }
-
+    /**
+     * Displays and manages the trader menu.
+     *
+     * Allows users to log in, create a new trader account,
+     * or return to the main menu.
+     *
+     * After successful authentication, starts ConsoleUI
+     * for the authenticated trader.
+     */
     private void showTraderMenu() {
         boolean running = true;
         while (running) {
@@ -96,7 +146,23 @@ public class MainMenuUI {
             }
         }
     }
-
+    /**
+     * Handles trader account registration through the console.
+     *
+     * Prompts the user for personal information, a username,
+     * a password, and password confirmation.
+     *
+     * Verifies that both passwords match before delegating
+     * account creation to TraderService.
+     *
+     * Attempts to save the newly created account using
+     * TraderPersistenceService and displays the result.
+     *
+     * If saving fails, the account remains registered
+     * in memory, but an error message is displayed.
+     *
+     * Password character arrays are cleared after processing.
+     */
     private void createAccount() {
         System.out.println();
         System.out.print("Enter first name: ");
@@ -133,7 +199,19 @@ public class MainMenuUI {
             Arrays.fill(confirmPassword, '\0');
         }
     }
-
+    /**
+     * Authenticates a trader through the console.
+     *
+     * Prompts for a username and password, then delegates
+     * credential verification to TraderService.
+     *
+     * Displays a welcome message when authentication
+     * succeeds or an error message when it fails.
+     *
+     * The password character array is cleared after processing.
+     *
+     * @return the authenticated Trader, or null if login fails
+     */
     private Trader login() {
         System.out.println();
         System.out.print("Enter username: ");
@@ -151,7 +229,17 @@ public class MainMenuUI {
             Arrays.fill(password, '\0');
         }
     }
-
+    /**
+     * Authenticates an administrator through the console.
+     *
+     * Prompts for administrator credentials and verifies
+     * them using AdminService.
+     *
+     * If authentication succeeds, creates and starts AdminUI.
+     * Otherwise, displays an invalid credentials message.
+     *
+     * The password character array is cleared after processing.
+     */
     private void loginAdmin() {
         System.out.println();
         System.out.println("ADMIN LOGIN");

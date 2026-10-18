@@ -12,8 +12,48 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-
+/**
+ * Displays the transaction history of an authenticated trader.
+ *
+ * Shows historical stock purchases and sales in a table
+ * containing transaction dates, types, stock symbols,
+ * share quantities, execution prices, and total amounts.
+ *
+ * Transactions are initially displayed from newest to oldest.
+ * The table supports sorting by column and uses custom
+ * renderers to format dates and monetary values.
+ *
+ * Historical execution prices are displayed independently
+ * of the stocks' current market prices.
+ *
+ * Navigation back to the trader dashboard is handled
+ * through a Runnable callback.
+ */
 public class TransactionsPanel extends JPanel {
+    /**
+     * Creates the transaction history panel for a trader.
+     *
+     * Retrieves the trader's transaction history and sorts
+     * a copy of the transaction list by date and time
+     * in descending order.
+     *
+     * Displays transactions in a read-only JTable with
+     * appropriate column data types to support sorting.
+     *
+     * Dates are formatted as yyyy-MM-dd HH:mm, while
+     * monetary values are displayed in US dollar format
+     * with two decimal places.
+     *
+     * If the trader has no recorded transactions,
+     * an informational message is displayed.
+     *
+     * @param trader the trader whose transaction history
+     *        will be displayed
+     * @param onBack the callback used to return
+     *        to the trader dashboard
+     * @throws IllegalArgumentException if trader
+     *         or onBack is null
+     */
     public TransactionsPanel(Trader trader, Runnable onBack) {
         if (trader == null || onBack == null)
             throw new IllegalArgumentException("Trader and onBack cannot be null.");
@@ -64,28 +104,28 @@ public class TransactionsPanel extends JPanel {
 
         // Format dates while keeping them sortable
         DefaultTableCellRenderer dateRenderer = new DefaultTableCellRenderer() {
-                    @Override
-                    protected void setValue(Object value) {
-                        if (value instanceof LocalDateTime) {
-                            setText(((LocalDateTime) value).format(formatter));
-                        } else {
-                            setText("");
-                        }
-                    }
-                };
+            @Override
+            protected void setValue(Object value) {
+                if (value instanceof LocalDateTime) {
+                    setText(((LocalDateTime) value).format(formatter));
+                } else {
+                    setText("");
+                }
+            }
+        };
         transactionTable.setDefaultRenderer(LocalDateTime.class, dateRenderer);
 
         // Format monetary amounts while keeping numeric sorting
         DefaultTableCellRenderer moneyRenderer = new DefaultTableCellRenderer() {
-                    @Override
-                    protected void setValue(Object value) {
-                        if (value instanceof Number) {
-                            setText(String.format(Locale.US, "$%,.2f", ((Number) value).doubleValue()));
-                        } else {
-                            setText("");
-                        }
-                    }
-                };
+            @Override
+            protected void setValue(Object value) {
+                if (value instanceof Number) {
+                    setText(String.format(Locale.US, "$%,.2f", ((Number) value).doubleValue()));
+                } else {
+                    setText("");
+                }
+            }
+        };
 
         moneyRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
         transactionTable.setDefaultRenderer(Double.class, moneyRenderer);

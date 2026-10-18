@@ -10,8 +10,56 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
+/**
+ * Displays the stock portfolio of an authenticated trader.
+ *
+ * Shows the trader's available cash balance, owned stocks,
+ * share quantities, current market prices, and holding values.
+ *
+ * The panel calculates the total portfolio value using
+ * current market prices and displays the total account value,
+ * which includes both cash and stock holdings.
+ *
+ * Traders can select an owned stock and open SellStockDialog
+ * to sell shares.
+ *
+ * Navigation and screen refreshing are managed through
+ * Runnable callbacks supplied by MainFrame.
+ */
 public class PortfolioPanel extends JPanel {
+    /**
+     * Creates the portfolio panel for the specified trader.
+     *
+     * Retrieves the trader's holdings and displays them
+     * in a non-editable JTable sorted by stock symbol.
+     *
+     * Each table row shows the stock symbol, company name,
+     * number of shares, current price, and holding value.
+     *
+     * The total portfolio value is calculated as the sum
+     * of each stock's current price multiplied by its
+     * owned quantity.
+     *
+     * The total account value is calculated by adding
+     * the trader's available balance to the portfolio value.
+     *
+     * Selecting a stock and clicking Sell Stock opens
+     * SellStockDialog. After the dialog closes, the
+     * onRefresh callback is invoked to update the portfolio.
+     *
+     * If the portfolio is empty, the Sell Stock button
+     * is disabled.
+     *
+     * @param parent the parent window for the selling dialog
+     * @param trader the trader whose portfolio is displayed
+     * @param tradingService the service processing stock sales
+     * @param traderPersistenceService the service saving trader data
+     * @param transactionService the service saving transaction history
+     * @param onBack the callback used to return to the trader dashboard
+     * @param onRefresh the callback used to refresh the portfolio panel
+     * @throws IllegalArgumentException if trader, a required service,
+     *         or a navigation callback is null
+     */
     public PortfolioPanel(JFrame parent, Trader trader, TradingService tradingService, TraderPersistenceService traderPersistenceService, TransactionService transactionService, Runnable onBack, Runnable onRefresh) {
         if (trader == null || tradingService == null || traderPersistenceService == null || transactionService == null || onBack == null || onRefresh == null)
             throw new IllegalArgumentException("Portfolio panel dependencies cannot be null.");

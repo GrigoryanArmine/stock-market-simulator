@@ -8,8 +8,39 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import java.util.Arrays;
 import java.util.List;
-
+/**
+ * Entry point for the graphical stock market simulator.
+ *
+ * Initializes the application services and loads previously
+ * saved market information, trader accounts, and transaction
+ * histories.
+ *
+ * The application uses Java Swing for its graphical interface.
+ * The main window is created and displayed on the Swing
+ * Event Dispatch Thread.
+ */
 public class GuiMain {
+    /**
+     * Creates the graphical application entry point.
+     */
+    public GuiMain() {
+    }
+    /**
+     * Starts the graphical stock market simulator.
+     *
+     * Initializes market, trading, authentication, and
+     * persistence services, restores saved data, and creates
+     * the demonstration administrator account.
+     *
+     * After successful initialization, schedules the creation
+     * and display of MainFrame on the Swing Event Dispatch Thread.
+     *
+     * If an IllegalArgumentException or IllegalStateException
+     * occurs during startup, the error is logged and an error
+     * dialog is scheduled for display.
+     *
+     * @param args command-line arguments, currently unused
+     */
     public static void main(String[] args) {
         try {
             // Initialize market

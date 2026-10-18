@@ -9,8 +9,47 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-
+/**
+ * Displays the stock market interface for an authenticated trader.
+ *
+ * Shows the trader's available cash balance and a table
+ * containing all stocks currently available in the market.
+ *
+ * Stocks are displayed alphabetically by symbol, including
+ * their company names and current market prices.
+ *
+ * Traders can select a stock and open BuyStockDialog
+ * to purchase shares.
+ *
+ * Navigation and screen refreshing are handled through
+ * Runnable callbacks provided by MainFrame.
+ */
 public class MarketPanel extends JPanel {
+    /**
+     * Creates the market panel for the specified trader.
+     *
+     * Retrieves stocks from MarketService and displays them
+     * in a non-editable JTable with single-row selection.
+     *
+     * The Buy Stock button opens BuyStockDialog for the
+     * selected stock. After the dialog closes, the
+     * onRefresh callback is invoked to refresh the market view.
+     *
+     * If no stocks are available, the buy button is disabled.
+     * If the user attempts to buy without selecting a stock,
+     * an error message is displayed.
+     *
+     * @param parent the parent window for the stock purchase dialog
+     * @param trader the authenticated trader viewing the market
+     * @param marketService the service providing available stocks
+     * @param tradingService the service handling stock purchases
+     * @param traderPersistenceService the service saving trader data
+     * @param transactionService the service saving transaction history
+     * @param onBack the callback used to return to the trader dashboard
+     * @param onRefresh the callback used to refresh the market panel
+     * @throws IllegalArgumentException if trader, a required service,
+     *         or a navigation callback is null
+     */
     public MarketPanel(
             JFrame parent,
             Trader trader,

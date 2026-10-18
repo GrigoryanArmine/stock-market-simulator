@@ -5,8 +5,48 @@ import com.armine.stockmarket.model.Trader;
 import javax.swing.*;
 import java.awt.*;
 import java.util.Locale;
-
+/**
+ * Represents the dashboard of an authenticated trader.
+ *
+ * Displays the trader's full name, username, and available
+ * cash balance.
+ *
+ * Provides navigation buttons for viewing the market,
+ * portfolio, transaction history, and logging out.
+ *
+ * When displayed immediately after account registration,
+ * the dashboard also shows an account creation message.
+ *
+ * Navigation is handled through Runnable callbacks
+ * supplied by MainFrame.
+ */
 public class TraderDashboardPanel extends JPanel {
+    /**
+     * Creates the dashboard for the specified trader.
+     *
+     * Initializes the trader information labels and
+     * navigation buttons using a vertical BoxLayout.
+     *
+     * The trader's available balance is displayed in
+     * US dollar format with two decimal places.
+     *
+     * If newAccount is true, a confirmation message
+     * is displayed to indicate successful registration.
+     *
+     * Each navigation button invokes its corresponding
+     * callback when clicked.
+     *
+     * @param trader the authenticated trader whose
+     *        account information is displayed
+     * @param newAccount whether the dashboard is being
+     *        displayed after creating a new account
+     * @param onMarket the action to open the market panel
+     * @param onPortfolio the action to open the portfolio panel
+     * @param onTransactions the action to open transaction history
+     * @param onLogout the action to return to the trader menu
+     * @throws IllegalArgumentException if trader or any
+     *         navigation callback is null
+     */
     public TraderDashboardPanel(Trader trader, boolean newAccount, Runnable onMarket, Runnable onPortfolio, Runnable onTransactions, Runnable onLogout) {
         if (trader == null || onMarket == null || onPortfolio == null || onTransactions == null || onLogout == null)
             throw new IllegalArgumentException("Trader and navigation callbacks cannot be null.");

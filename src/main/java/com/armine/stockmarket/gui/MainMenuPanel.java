@@ -2,9 +2,32 @@ package com.armine.stockmarket.gui;
 
 import javax.swing.*;
 import java.awt.*;
-
+/**
+ * Represents the main menu panel of the graphical
+ * stock market simulator.
+ *
+ * Displays the application title and provides buttons
+ * for accessing the trader interface, administrator
+ * interface, or exiting the application.
+ *
+ * Navigation actions are supplied through Runnable
+ * callbacks, allowing MainFrame to control which
+ * screen is displayed next.
+ */
 public class MainMenuPanel extends JPanel {
-
+    /**
+     * Creates the main menu panel with navigation buttons.
+     *
+     * Uses GridBagLayout to center the menu and BoxLayout
+     * to arrange its components vertically.
+     *
+     * Each button executes its corresponding callback
+     * when clicked.
+     *
+     * @param onTrader the action to open the trader menu
+     * @param onAdmin the action to open administrator login
+     * @param onExit the action to exit the application
+     */
     public MainMenuPanel(Runnable onTrader, Runnable onAdmin, Runnable onExit) {
         setLayout(new GridBagLayout());
 

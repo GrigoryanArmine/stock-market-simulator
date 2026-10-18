@@ -2,8 +2,34 @@ package com.armine.stockmarket.gui.trader;
 
 import javax.swing.*;
 import java.awt.*;
-
+/**
+ * Represents the trader navigation menu in the graphical
+ * stock market simulator.
+ *
+ * Provides options for logging into an existing trader
+ * account, creating a new account, or returning to
+ * the application's main menu.
+ *
+ * Navigation is handled through Runnable callbacks,
+ * keeping the panel independent of other GUI screens.
+ */
 public class TraderMenuPanel extends JPanel {
+    /**
+     * Creates the trader menu with its navigation buttons.
+     *
+     * Uses GridBagLayout to center the menu and BoxLayout
+     * to arrange the components vertically.
+     *
+     * Buttons are configured with consistent dimensions,
+     * and each button executes its corresponding callback
+     * when clicked.
+     *
+     * @param onLogin the action to open the trader login screen
+     * @param onCreateAccount the action to open account registration
+     * @param onBack the action to return to the main menu
+     * @throws IllegalArgumentException if any navigation
+     *         callback is null
+     */
     public TraderMenuPanel(Runnable onLogin, Runnable onCreateAccount, Runnable onBack) {
         if (onLogin == null || onCreateAccount == null || onBack == null)
             throw new IllegalArgumentException("Navigation callbacks cannot be null.");

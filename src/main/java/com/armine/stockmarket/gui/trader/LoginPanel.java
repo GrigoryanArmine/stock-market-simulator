@@ -7,8 +7,44 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Arrays;
 import java.util.function.Consumer;
-
+/**
+ * Provides the graphical login interface for trader accounts.
+ *
+ * Allows traders to enter their username and password
+ * and authenticates their credentials using TraderService.
+ *
+ * The panel provides an option to show or hide the password,
+ * displays authentication errors, and supports keyboard
+ * navigation through the login form.
+ *
+ * After successful authentication, the authenticated Trader
+ * is passed to a callback that handles navigation to the
+ * trader dashboard.
+ */
 public class LoginPanel extends JPanel {
+    /**
+     * Creates the trader login panel.
+     *
+     * Initializes username and password fields, a password
+     * visibility checkbox, error messages, and navigation buttons.
+     *
+     * Login requests are delegated to TraderService.
+     * If authentication succeeds, the authenticated trader
+     * is passed to the onLoginSuccess callback.
+     *
+     * If authentication fails, the error message is displayed
+     * without leaving the current panel.
+     *
+     * The password character array is cleared after each
+     * login attempt, and the password field is reset.
+     *
+     * @param traderService the service used to authenticate traders
+     * @param onLoginSuccess the callback invoked with the
+     *        authenticated trader after successful login
+     * @param onBack the callback used to return to the trader menu
+     * @throws IllegalArgumentException if traderService,
+     *         onLoginSuccess, or onBack is null
+     */
     public LoginPanel(TraderService traderService, Consumer<Trader> onLoginSuccess, Runnable onBack) {
         if (traderService == null || onLoginSuccess == null || onBack == null)
             throw new IllegalArgumentException("Login panel dependencies cannot be null.");
@@ -72,8 +108,6 @@ public class LoginPanel extends JPanel {
             }
             onLoginSuccess.accept(trader);
         });
-
-
         // Back navigation
         backButton.addActionListener(e -> onBack.run());
 

@@ -8,10 +8,65 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Arrays;
 import java.util.function.Consumer;
-
+/**
+ * Provides the graphical interface for registering new trader accounts.
+ *
+ * Collects a trader's personal information, username, password,
+ * and password confirmation.
+ *
+ * Account validation and creation are delegated to TraderService,
+ * while account data is saved using TraderPersistenceService.
+ *
+ * If saving fails after an account has been created in memory,
+ * the panel allows the user to retry saving without creating
+ * a duplicate account.
+ *
+ * After successful registration and persistence, the created
+ * trader is passed to a callback for further navigation.
+ */
 public class CreateAccountPanel extends JPanel {
+    /**
+     * Holds an account that has been created but has not yet
+     * been successfully saved.
+     *
+     * This prevents repeated registration attempts from
+     * creating duplicate trader accounts after a saving failure.
+     */
     private Trader pendingTrader;
-
+    /**
+     * Creates the trader registration panel.
+     *
+     * Initializes fields for the trader's first name, surname,
+     * username, password, and password confirmation.
+     *
+     * When registration is requested, the panel verifies that
+     * both passwords match and delegates account creation
+     * to TraderService.
+     *
+     * After account creation, it attempts to save the trader
+     * using TraderPersistenceService.
+     *
+     * If saving fails, the created account is retained in
+     * pendingTrader, the registration fields become read-only,
+     * and the create button changes to "Retry Save".
+     * Back navigation is disabled until saving succeeds.
+     *
+     * After successful saving, the created trader is passed
+     * to the onAccountCreated callback.
+     *
+     * Password character arrays are cleared after the
+     * registration attempt.
+     *
+     * @param traderService the service responsible for
+     *        creating and validating trader accounts
+     * @param traderPersistenceService the service responsible
+     *        for saving trader account data
+     * @param onAccountCreated the callback invoked with the
+     *        newly registered trader after successful saving
+     * @param onBack the callback used to return to the trader menu
+     * @throws IllegalArgumentException if any required service
+     *         or callback is null
+     */
     public CreateAccountPanel(TraderService traderService, TraderPersistenceService traderPersistenceService, Consumer<Trader> onAccountCreated, Runnable onBack) {
         if (traderService == null || traderPersistenceService == null || onAccountCreated == null || onBack == null)
             throw new IllegalArgumentException("Account panel dependencies cannot be null.");
@@ -63,7 +118,6 @@ public class CreateAccountPanel extends JPanel {
         // Create account functionality
         createButton.addActionListener(e -> {
             errorLabel.setText(" ");
-            // Create the account only once
             if (pendingTrader == null) {
                 String firstName = firstNameField.getText().trim();
                 String surname = surnameField.getText().trim();
@@ -73,11 +127,8 @@ public class CreateAccountPanel extends JPanel {
                 char[] confirmPassword = confirmPasswordField.getPassword();
 
                 try {
-                    // UI-specific validation
                     if (!Arrays.equals(password, confirmPassword))
                         throw new IllegalArgumentException("Passwords do not match.");
-
-                    // Model and service handle other validations
                     pendingTrader = traderService.createTrader(firstName, surname, username, password);
                 } catch (IllegalArgumentException ex) {
                     errorLabel.setText(ex.getMessage());
@@ -89,8 +140,6 @@ public class CreateAccountPanel extends JPanel {
                     confirmPasswordField.setText("");
                 }
             }
-
-            // Save the account
             try {
                 traderPersistenceService.saveTrader(pendingTrader);
             } catch (IllegalArgumentException | IllegalStateException ex) {

@@ -7,14 +7,59 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-
+/**
+ * Provides a modal dialog for adding new stocks to the market.
+ *
+ * Allows administrators to enter a stock symbol, company name,
+ * and initial share price.
+ *
+ * The dialog validates the entered price as the user types
+ * and displays error messages for invalid input.
+ *
+ * New stocks are created using the Stock model and added
+ * to the market through MarketService.
+ *
+ * After a stock is successfully added, a callback is invoked
+ * to refresh the stock management table.
+ */
 public class AddStockDialog extends JDialog {
+    /** Service used to add stocks to the market. */
     private MarketService marketService;
+    /** Input field for the new stock symbol. */
     private JTextField symbolField;
+    /** Input field for the company name. */
     private JTextField companyField;
+    /** Input field for the initial stock price. */
     private JTextField priceField;
+    /** Label displaying validation and saving errors. */
     private JLabel errorLabel;
-
+    /**
+     * Creates a modal dialog for adding a stock to the market.
+     *
+     * Initializes input fields for the stock symbol, company
+     * name, and initial price, along with buttons for adding
+     * the stock or canceling the operation.
+     *
+     * The price field is monitored for changes so invalid
+     * prices can be reported immediately.
+     *
+     * When the administrator submits the form, a Stock
+     * object is created and passed to MarketService.
+     *
+     * If the operation succeeds, the onStockAdded callback
+     * is executed and the dialog closes.
+     *
+     * If validation or stock creation fails, the error
+     * message is displayed and the dialog remains open.
+     *
+     * @param parent the parent window for the modal dialog
+     * @param marketService the service responsible for
+     *        managing available market stocks
+     * @param onStockAdded the callback invoked after
+     *        successfully adding a stock
+     * @throws IllegalArgumentException if marketService
+     *         or onStockAdded is null
+     */
     public AddStockDialog(JFrame parent, MarketService marketService, Runnable onStockAdded) {
         super(parent, "Add Stock", true);
         if (marketService == null || onStockAdded == null)
@@ -157,7 +202,20 @@ public class AddStockDialog extends JDialog {
         panel.add(formPanel);
         add(panel);
     }
-
+    /**
+     * Validates the initial stock price entered by the administrator.
+     *
+     * Called whenever the content of the price field changes.
+     *
+     * The method checks whether the input is a valid numeric
+     * value and delegates price validation to Stock.validatePrice().
+     *
+     * If validation succeeds or the field is empty, the
+     * current error message is cleared.
+     *
+     * If the input is invalid, the corresponding error
+     * message is displayed in the dialog.
+     */
     private void validatePrice() {
         String input = priceField.getText().trim();
 
@@ -175,7 +233,9 @@ public class AddStockDialog extends JDialog {
             errorLabel.setText(ex.getMessage());
         }
     }
-
+    /**
+     * Clears the currently displayed validation error message.
+     */
     private void clearError() {
         errorLabel.setText(" ");
     }
